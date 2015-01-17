@@ -12,10 +12,10 @@ import	lua;
 import	lualib;
 import	lauxlib;
 
-enum	int		LUA_S_OK		= 0;
-enum	int		LUA_S_NOTTABLE	= 1;
-enum	int		LUA_S_NONUMBER	= 2;
-enum	int		LUA_S_NOEXIST	= 3;
+enum	int		LUA_S_OK			= 0;
+enum	int		LUA_S_NOTTABLE		= 1;
+enum	int		LUA_S_NONUMBER		= 2;
+enum	int		LUA_S_NOEXIST		= 3;
 
 //-------------------------------------------------------------------
 //

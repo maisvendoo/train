@@ -1,6 +1,9 @@
 ﻿module	Model;
 
-import	ODEqs;
+public
+{
+	import	ODEqs;
+}
 
 class CModel
 {
@@ -78,7 +81,7 @@ class CModel
 	}
 
 	// Set simulation stop time
-	void set_end_time(double t_end)
+	void set_stop_time(double t_end)
 	{
 		this.t_end = t_end;
 	}

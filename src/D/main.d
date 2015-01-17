@@ -12,5 +12,10 @@ CTrainModel	model = null;
 //-------------------------------------------------------------------
 void main()
 {
+	model = new CTrainModel();
 
+	int err = model.init("../../cfg/train.lua");
+
+	if (err == -1)
+		return;
 }

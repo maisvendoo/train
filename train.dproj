@@ -31,6 +31,7 @@
     <Externalconsole>true</Externalconsole>
     <DebugLevel>0</DebugLevel>
     <ExtraLinkerArguments>-llua</ExtraLinkerArguments>
+    <ConsolePause>false</ConsolePause>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Unittest|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -43,6 +44,7 @@
     <Externalconsole>true</Externalconsole>
     <DebugLevel>0</DebugLevel>
     <ExtraLinkerArguments>-llua</ExtraLinkerArguments>
+    <ConsolePause>false</ConsolePause>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="src\D\LinearEQs.d" />
@@ -61,5 +63,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
+    <None Include="cfg\train.lua" />
   </ItemGroup>
 </Project>
