@@ -101,7 +101,20 @@ class	CTrainModel: CModel
 	//------------------------------------------------------------------
 	int init(string cfg_name)
 	{
-		int err = LUA_S_OK;
+		int err = 0;
+
+		if (read_lua_config(cfg_name) == -1)
+			return -1;
+
+		return err;
+	}
+
+	//---------------------------------------------------------------
+	//		Read parameters from Lua-config
+	//---------------------------------------------------------------
+	private int read_lua_config(string cfg_name)
+	{
+		int	err = LUA_S_OK;
 
 		err = lua_cfg.exec_script(cfg_name);
 

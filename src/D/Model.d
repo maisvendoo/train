@@ -56,8 +56,6 @@ class CModel
 		ode_solver_step(y, dydt, t, dt, dt_max, eps, ode_sys);
 	}
 
-	//---- Public methods
-
 	// Simulation progress
 	void process()
 	{
