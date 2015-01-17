@@ -2,8 +2,9 @@ module	main;
 
 import	Train;
 import	std.stdio;
+import	core.thread;
 
-CTrainModel	model = null;
+CTrainModel	model;
 
 //-------------------------------------------------------------------
 //
@@ -18,4 +19,9 @@ void main()
 
 	if (err == -1)
 		return;
+
+	// Starting simulation thread
+	Thread sim_tread = new Thread(&model.process);
+
+	sim_tread.start();
 }

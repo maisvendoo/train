@@ -115,6 +115,11 @@ class CModel
 	{
 		y.length = dim;
 		dydt.length = dim;
+
+		for (int i = 0; i < dim; i++)
+		{
+			y[i] = dydt[i] = 0;
+		}
 	}
 
 	// Get state variable value

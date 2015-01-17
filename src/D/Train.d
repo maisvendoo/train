@@ -52,6 +52,8 @@ class	CTrainModel: CModel
 		terminal.set_print_func(&this.term_out);
 
 		this.lua_cfg = new CLuaScript();
+
+		set_dimension(2);
 	}
 
 
@@ -181,6 +183,12 @@ class	CTrainModel: CModel
 
 		if (err == LUA_S_NOEXIST)
 			railway_coord = 1e6;
+
+		// initial velocity
+		v0 = lua_cfg.get_double_field("train_model", "init_velocity", err);
+
+		if (err == LUA_S_NOEXIST)
+			v0 = 0;
 
 		return err;
 	}
