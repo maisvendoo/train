@@ -16,11 +16,17 @@ import	LuaScript;
 //-------------------------------------------------------------------
 class	CTrainModel: CModel
 {
-	//---- Train model parameters
+	//---------------------------------------------------------------
+	//		Train model parameters
+	//---------------------------------------------------------------
 	private
 	{
 		uint		nv;
 		uint		ode_dim;
+		string		couplig_type;
+
+		double		v0;
+		double		railway_coord;
 
 		double[]	m;
 
@@ -28,10 +34,18 @@ class	CTrainModel: CModel
 		CLuaScript	lua_cfg;
 	}
 
-	//---- Constructor
+
+
+	//------------------------------------------------------------------
+	//		Constructor
+	//------------------------------------------------------------------
 	this()
 	{
 		this.nv = 1;
+		this.couplig_type = "default";
+
+		this.v0 = 0;
+		this.railway_coord = 1e6;
 
 		terminal = new CLogFile();
 		terminal.init();
@@ -40,7 +54,11 @@ class	CTrainModel: CModel
 		this.lua_cfg = new CLuaScript();
 	}
 
-	// Motion ODE system
+
+
+	//------------------------------------------------------------------
+	//		Motion ODE system
+	//------------------------------------------------------------------
 	override protected void ode_system(double[] Y,
 									   ref double[] dYdt, 
 									   double t) 
@@ -49,7 +67,11 @@ class	CTrainModel: CModel
 		dYdt[1] = 2;
 	}
 
-	// Simulation progress
+
+
+	//------------------------------------------------------------------
+	//		Simulation progress
+	//------------------------------------------------------------------
 	override void process() 
 	{
 		while (t < t_end)
@@ -60,13 +82,21 @@ class	CTrainModel: CModel
 		}
 	}
 
-	// Terminal print by simulation process
+
+
+	//------------------------------------------------------------------
+	//		Terminal print by simulation process
+	//------------------------------------------------------------------
 	private void term_out(File term)
 	{
 		term.writefln("t = %f y = %f", t, y[0]);
 	}
 
-	// Initialization form Lua-script file
+
+
+	//------------------------------------------------------------------
+	//		Initialization form Lua-script file
+	//------------------------------------------------------------------
 	int init(string cfg_name)
 	{
 		int err = LUA_S_OK;
@@ -76,7 +106,7 @@ class	CTrainModel: CModel
 		if (err == -1)
 			return err;
 
-		// Set ODE solver parameters
+		//--- Set ODE solver parameters
 		string method = lua_cfg.get_str_field("solver_params", "method", err);
 
 		// method
@@ -124,6 +154,33 @@ class	CTrainModel: CModel
 
 		set_max_time_step(max_step);
 
+		// maximal time step
+		double local_err = lua_cfg.get_double_field("solver_params", "local_err", err);
+
+		if (err == LUA_S_NOEXIST)
+			local_err = 1e-8;
+
+		set_local_error(local_err);
+
+		//----	Set train model parameters
+
+		// number of vehicles
+		nv = lua_cfg.get_int_field("train_model", "vehicles_num", err);
+
+		if (err == LUA_S_NOEXIST)
+			nv = 1;
+
+		// couplig type
+		couplig_type = lua_cfg.get_str_field("train_model", "coupling_type", err);
+
+		if (err == LUA_S_NOEXIST)
+			couplig_type = "default";
+
+		// railway coordinate
+		railway_coord = lua_cfg.get_double_field("train_model", "railway_coord", err);
+
+		if (err == LUA_S_NOEXIST)
+			railway_coord = 1e6;
 
 		return err;
 	}
