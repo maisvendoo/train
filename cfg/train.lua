@@ -33,3 +33,11 @@ train_model =
 
 train_model.railway_coord = train_model.railway_coord*km
 train_model.init_velocity = train_model.init_velocity / kmh
+
+vehicle_mass = {}
+
+for i = 1, train_model.vehicles_num do
+
+	vehicle_mass[i] = 85e3
+
+end

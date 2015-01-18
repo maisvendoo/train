@@ -202,6 +202,41 @@ class	CLuaScript
 			return ret;
 		}
 
+		// Get double field by index
+		double get_double_field(string table, int idx, int err)
+		{
+			double ret = 0;
+
+			top = lua_gettop(L);
+
+			lua_getglobal(L, cast(char*) table);
+
+			if (lua_istable(L, -1))
+			{
+				int index = lua_gettop(L);
+				int count = 0;
+				lua_pushnil(L);
+
+				while ( (lua_next(L, index) != 0) && (count <= idx) )
+				{
+					ret = lua_tonumber(L, -1);
+					lua_pop(L, 1);
+					count++;
+				}
+
+				err = LUA_S_OK;
+			}
+			else
+			{
+				err = LUA_S_NOTTABLE;
+				ret = 0;
+			}
+
+			restore_stack();
+
+			return ret;
+		}
+
 		// Get table integer field
 		int get_int_field(string table, string field, ref int err)
 		{
