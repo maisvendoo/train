@@ -1,7 +1,7 @@
 //-------------------------------------------------------------------
 //
 //		Library for solving of Ordinar Differential Equations (ODE)
-//		(c) maisvendoo, 2014.12
+//		(c) maisvendoo, 2014/12
 //
 //-------------------------------------------------------------------
 module	ODEqs;
