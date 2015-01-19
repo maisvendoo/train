@@ -7,10 +7,6 @@
 module	main;
 
 import	Train;
-import	std.stdio;
-import	core.thread;
-
-CTrainModel	model;
 
 //-------------------------------------------------------------------
 //
@@ -18,7 +14,7 @@ CTrainModel	model;
 void main()
 {
 	// Model creation
-	model = new CTrainModel();
+	CTrainModel model = new CTrainModel();
 
 	// Model initialization
 	int err = model.init("../../cfg/train.lua");
@@ -26,8 +22,5 @@ void main()
 	if (err == -1)
 		return;
 
-	// Starting simulation thread
-	Thread sim_tread = new Thread(&model.process);
-
-	sim_tread.start();
+	model.start();
 }
