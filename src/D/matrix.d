@@ -127,3 +127,21 @@ void print_matrix(double[][] M, File file = stdout)
 		file.writeln();
 	}
 }
+
+//-------------------------------------------------------------------
+//
+//-------------------------------------------------------------------
+int rows_change(ref double[][] M, int i, int j)
+{
+	int	n = cast(int) M.length;
+
+	if ( (i > n-1) || (j > n-1) )
+		return -1;
+
+	double[] tmp = M[i];
+
+	M[i] = M[j];
+	M[j] = tmp;
+
+	return 0;
+}
