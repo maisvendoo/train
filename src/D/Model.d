@@ -6,6 +6,8 @@
 //-------------------------------------------------------------------
 module	Model;
 
+import core.thread;
+
 public
 {
 	import	ODEqs;
@@ -31,6 +33,8 @@ class CModel
 		ode_solver_t	ode_solver_step;
 		// ODE system function 
 		ode_system_t	ode_sys;
+
+		Thread			sim_thread;
 	}
 
 	this()
@@ -63,13 +67,20 @@ class CModel
 	}
 
 	// Simulation progress
-	void process()
+	protected void process()
 	{
 		while (t <= t_end)
 		{
 			step();
 			t += dt;
 		}
+	}
+
+	// Start simulation thread
+	void start()
+	{
+		sim_thread = new Thread(&this.process);
+		sim_thread.start();
 	}
 
 	// Set state variable
