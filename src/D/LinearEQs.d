@@ -7,6 +7,9 @@
 module	LinearEQs;
 
 import	std.math;
+import	std.stdio;
+
+import	matrix;
 
 //-------------------------------------------------------------------
 //
@@ -65,4 +68,38 @@ bool seidel_solver(double[][] A,
 		return false;
 	else
 		return true;
+}
+
+//-------------------------------------------------------------------
+//
+//-------------------------------------------------------------------
+void gauss_solver(double[][] A, double[][] b, ref double[] x)
+{
+	double	c = 0;
+	int		n = cast(int) A.length;
+
+	// Forward (A to uptriangle form)
+	for (int i = 0; i < n-1; i++)
+	{
+		for (int j = i; j < n-1; j++)
+		{
+			c = A[j+1][i] / A[i][i];
+
+			for (int k = 0; k < n; k++)
+				A[j+1][k] = A[j+1][k] - c*A[i][k];
+
+			b[j+1][0] = b[j+1][0] - c*b[i][0];
+		}
+	}
+
+	// Backward (roots found)
+	for (int i = n-1; i >=0; i--)
+	{
+		double sum = b[i][0];
+
+		for (int j = n-1; j >= i+1; j--)
+			sum -= A[i][j]*x[j];
+
+		x[i] = sum / A[i][i];
+	}
 }
