@@ -74,7 +74,7 @@ class	CTrainModel: CModel
 	//------------------------------------------------------------------
 	//		Simulation progress
 	//------------------------------------------------------------------
-	override void process() 
+	override protected void process() 
 	{
 		while (t < t_end)
 		{
