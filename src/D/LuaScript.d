@@ -76,13 +76,24 @@ class	CLuaScript
 		}
 
 		// Get double value by name
-		double get_double(string param_name)
+		double get_double(string param_name, ref int err)
 		{
+			double ret = 0;
+
 			top = lua_gettop(L);
 
 			lua_getglobal(L, cast(char*) param_name);
 
-			double ret = lua_tonumber(L, -1);
+			if (lua_isnil(L, -1))
+			{
+				ret = 0;
+				err = LUA_S_NOEXIST;
+			}
+			else
+			{
+				ret = lua_tonumber(L, -1);
+				err = LUA_S_OK;
+			}
 
 			restore_stack();
 
@@ -90,13 +101,24 @@ class	CLuaScript
 		}
 
 		// Get integer value by name
-		int get_int(string param_name)
+		int get_int(string param_name, ref int err)
 		{
+			int ret = 0;
+
 			top = lua_gettop(L);
 
 			lua_getglobal(L, cast(char*) param_name);
 
-			int ret = cast(int) lua_tointeger(L, -1);
+			if (lua_isnil(L, -1))
+			{
+				ret = 0;
+				err = LUA_S_NOEXIST;
+			}
+			else
+			{
+				ret = cast(int) lua_tonumber(L, -1);
+				err = LUA_S_OK;
+			}
 
 			restore_stack();
 
@@ -104,13 +126,24 @@ class	CLuaScript
 		}
 
 		// Get string value by name
-		string get_string(string param_name)
+		string get_string(string param_name, ref int err)
 		{
+			string ret = "";
+
 			top = lua_gettop(L);
 
 			lua_getglobal(L, cast(char*) param_name);
 
-			string ret = lua_tostring(L, -1);
+			if (lua_isnil(L, -1))
+			{
+				ret = "";
+				err = LUA_S_NOEXIST;
+			}
+			else
+			{
+				ret = lua_tostring(L, -1);
+				err = LUA_S_OK;
+			}
 
 			restore_stack();
 
