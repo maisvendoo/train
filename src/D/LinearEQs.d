@@ -10,6 +10,7 @@ import	std.math;
 import	std.stdio;
 
 import	matrix;
+//import	MathFuncs;
 
 //-------------------------------------------------------------------
 //
@@ -100,6 +101,59 @@ void gauss_solver(double[][] A, double[][] b, ref double[] x)
 		for (int j = n-1; j >= i+1; j--)
 			sum -= A[i][j]*x[j];
 
+		x[i] = sum / A[i][i];
+	}
+}
+
+//-------------------------------------------------------------------
+//
+//-------------------------------------------------------------------
+void gaussLE_solver(double[][] A, double[][] b, ref double[] x)
+{
+	double	c = 0;
+	int		n = cast(int) A.length;
+	double	max = 0;
+	int 	p = 0;
+
+	for (int i = 0; i < n-1; i++)
+	{
+		for (int k = i; k < n; k++)
+		{
+			if (abs(A[k][i]) > max)
+			{
+				max = A[k][i];
+				p = k;
+			}
+		}
+
+		print_matrix(A);
+		writeln();
+		
+		rows_change(A, i, p);
+		rows_change(b, i, p);
+
+		print_matrix(A);
+		writeln();
+
+		for (int j = i; j < n-1; j++)
+		{
+			c = A[j+1][i] / A[i][i];
+			
+			for (int k = 0; k < n; k++)
+				A[j+1][k] = A[j+1][k] - c*A[i][k];
+			
+			b[j+1][0] = b[j+1][0] - c*b[i][0]; 
+		}
+	}
+
+	// Backward (roots found)
+	for (int i = n-1; i >=0; i--)
+	{
+		double sum = b[i][0];
+		
+		for (int j = n-1; j >= i+1; j--)
+			sum -= A[i][j]*x[j];
+		
 		x[i] = sum / A[i][i];
 	}
 }
