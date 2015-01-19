@@ -203,11 +203,6 @@ class	CTrainModel: CModel
 		if (err == LUA_S_NOEXIST)
 			v0 = 0;
 
-		double[] m = new double[nv];
-
-		for (int i = 0; i < nv; i++)
-			m[i] = lua_cfg.get_double_field("vehicle_mass", i+1, err);
-
 		return err;
 	}
 }
