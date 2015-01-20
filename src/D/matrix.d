@@ -7,6 +7,19 @@
 module		matrix;
 
 import		std.stdio;
+import		std.math;
+
+//-------------------------------------------------------------------
+//
+//-------------------------------------------------------------------
+void change(T)(ref T[] array, int p, int q)
+{
+	T	c;
+	
+	c = array[p];
+	array[p] = array[q];
+	array[q] = c;
+}
 
 //-------------------------------------------------------------------
 //		Matrix (n x m) creation
@@ -122,7 +135,7 @@ void print_matrix(double[][] M, File file = stdout)
 	for (int i = 0; i < n; i++)
 	{
 		for (int j = 0; j < m; j++)
-			file.writef("%10.3f ", M[i][j]);
+			file.writef("%20.5f ", M[i][j]);
 
 		file.writeln();
 	}
@@ -135,8 +148,13 @@ int rows_change(ref double[][] M, int i, int j)
 {
 	int	n = cast(int) M.length;
 
+	// Indexes are upper than matrix size 
 	if ( (i > n-1) || (j > n-1) )
 		return -1;
+
+	// Indexes are equate - exit without actions
+	if (i == j)
+		return 0;
 
 	double[] tmp = M[i];
 
@@ -144,4 +162,110 @@ int rows_change(ref double[][] M, int i, int j)
 	M[j] = tmp;
 
 	return 0;
+}
+
+//-------------------------------------------------------------------
+//
+//-------------------------------------------------------------------
+int rows_sum(ref double[][] M, double c_i, double c_j, int i, int j)
+{
+	int	n = cast(int) M.length;
+	int m = cast(int) M[0].length;
+
+	if ( (i > n-1) || (j > n-1) )
+		return -1;
+
+	if (i == j)
+		return -1;
+
+	for (int k = 0; k < m; k++)
+		M[i][k] = c_i*M[i][k] + c_j*M[j][k];
+
+	return 0;
+}
+
+//-------------------------------------------------------------------
+//
+//-------------------------------------------------------------------
+double[][] get_minor_matrix(double[][] M, int p, int q)
+{
+	int	n = cast(int) M.length;
+	int	m = cast(int) M[0].length;
+
+	if ( (p > n-1) || (q > m-1) )
+		return null;
+
+	if ( (p <0) || (q < 0) )
+		return null;
+
+	double[][] tmp = create_matrix(n-1, m-1);
+
+	for (int i = 0; i < p; i++)
+		for (int j = 0; j < q; j++)
+			tmp[i][j] = M[i][j];
+
+	for (int i = 0; i < p; i++)
+		for (int j = q; j < m-1; j++)
+			tmp[i][j] = M[i][j+1];
+
+	for (int i = p; i < n-1; i++)
+		for (int j = 0; j < q; j++)
+			tmp[i][j] = M[i+1][j];
+
+	for (int i = p; i < n-1; i++)
+		for (int j = q; j < m-1; j++)
+			tmp[i][j] = M[i+1][j+1];
+
+	return tmp;
+}
+
+//-------------------------------------------------------------------
+//
+//-------------------------------------------------------------------
+double get_absmax_element(double[][] M, ref int p, ref int q)
+{
+	double	max = 0;
+	int		n = cast(int) M.length;
+	int		m = cast(int) M[0].length;
+
+	for (int i = 0; i < n; i++)
+	{
+		for (int j = 0; j < m; j++)
+		{
+			if (abs(M[i][j]) > max)
+			{
+				max = M[i][j];
+				p = i;
+				q = j;
+			}
+		}
+	}
+
+	return M[p][q];
+}
+
+//-------------------------------------------------------------------
+//
+//-------------------------------------------------------------------
+void row_zero(double[][] M, int p)
+{
+	int	m = cast(int) M[0].length;
+
+	for (int j = 0; j < m; j++)
+		M[p][j] = 0;
+}
+
+//-------------------------------------------------------------------
+//
+//-------------------------------------------------------------------
+void columns_change(double[][] M, int p, int q)
+{
+	int	n = cast(int) M.length;
+
+	for (int i = 0; i < n; i++)
+	{
+		double tmp = M[i][p];
+		M[i][p] = M[i][q];
+		M[i][q] = tmp;
+	}
 }
