@@ -35,7 +35,7 @@ class	CCoupling
 	{
 		this.c = 1e7;
 		this.beta = 0;
-		this.T0 = 0;
+		this.T0 = 240e3;
 
 		this.ds_prev = 0;
 		this.T_cur = 0;
@@ -82,6 +82,11 @@ class	CCoupling
 	double get_force(double ds, double dv)
 	{
 		return (T0 + c*abs(ds))*sign(ds) + beta*dv;
+	}
+
+	double get_init_force()
+	{
+		return T0;
 	}
 
 

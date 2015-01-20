@@ -25,7 +25,7 @@ solver_params =
 ---------------------------------------------------------------------
 train_model = 
 {
-	vehicles_num 	= 2,
+	vehicles_num 	= 1,
 	coupling_type	= "default",
 	railway_coord	= 1500,			-- initial railway coordinate (km)
 	init_velocity	= 72			-- initial velocity (km/h)
@@ -35,6 +35,8 @@ train_model.railway_coord = train_model.railway_coord*km
 train_model.init_velocity = train_model.init_velocity / kmh
 
 vehicle_mass = {}
+
+mass_coeff = 0.02
 
 for i = 1, train_model.vehicles_num do
 
