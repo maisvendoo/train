@@ -160,7 +160,7 @@ void gaussLER_solver(double[][] A, double[][] b, ref double[] x)
 //-------------------------------------------------------------------
 //
 //-------------------------------------------------------------------
-void gaussLEF_solver(double[][] A, double[][] b, ref double[] x)
+void gaussLEF_solver(const double[][] A, const double[][] b, ref double[] x)
 {
 	int			n = cast(int) A.length;
 	int			p = 0;
@@ -224,8 +224,6 @@ void gaussLEF_solver(double[][] A, double[][] b, ref double[] x)
 
 				rows_sum(A1, 1, m, i, p);
 				rows_sum(A2, 1, m, i, p);
-
-				A[i][q] = 0;
 			}		
 		}	
 

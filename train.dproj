@@ -61,6 +61,8 @@
     <Compile Include="src\D\lua_d_api\luaconf.d" />
     <Compile Include="src\D\lua_d_api\lualib.d" />
     <Compile Include="src\D\Coupling.d" />
+    <Compile Include="src\D\ConstReacts.d" />
+    <Compile Include="src\D\EFCoupling.d" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />

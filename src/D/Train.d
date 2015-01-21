@@ -12,8 +12,9 @@ import	LogFile;
 import	Model;
 import	LuaScript;
 import	matrix;
-import	Coupling;
+import	EFCoupling;
 import	LinearEQs;
+import	ConstReacts;
 
 //-------------------------------------------------------------------
 //		General train  model class
@@ -38,6 +39,7 @@ class	CTrainModel: CModel
 		double[]	m;
 
 		CLogFile	terminal;
+		CLogFile	file_log;
 		CLuaScript	lua_cfg;
 
 		double[]	F;
@@ -51,8 +53,8 @@ class	CTrainModel: CModel
 		double[][]	Theta;
 		double[][]	Q;
 
-		CCoupling[]	fwd_coup;
-		CCoupling[]	bwd_coup;
+		CEFCoupling[]	fwd_coup;
+		CEFCoupling[]	bwd_coup;
 	}
 
 
@@ -74,6 +76,10 @@ class	CTrainModel: CModel
 		terminal = new CLogFile();
 		terminal.init();
 		terminal.set_print_func(&this.term_out);
+
+		file_log = new CLogFile();
+		file_log.init("log.txt");
+		file_log.set_print_func(&this.file_out);
 
 		this.lua_cfg = new CLuaScript();
 
@@ -99,9 +105,9 @@ class	CTrainModel: CModel
 
 			double[] a = get_accels(Y, t, i);
 
-			dYdt[k+nb]		= a[k];
-			dYdt[k+1+nb]	= a[k+1];
-			dYdt[k+2+nb]	= a[k+2];
+			dYdt[k+nb]		= a[0];
+			dYdt[k+1+nb]	= a[1];
+			dYdt[k+2+nb]	= a[2];
 		}
 	}
 
@@ -115,7 +121,15 @@ class	CTrainModel: CModel
 		while (t < t_end)
 		{
 			terminal.print(0.01, dt);
+			file_log.print(0.01, dt);
 			step();
+
+			for (int i = 0; i < nv; i++)
+			{
+				fwd_coup[i].reset();
+				bwd_coup[i].reset();
+			}
+
 			t += dt;
 		}
 	}
@@ -127,7 +141,14 @@ class	CTrainModel: CModel
 	//------------------------------------------------------------------
 	private void term_out(File term)
 	{
-		term.writefln("t = %f x = %f s1 = %f s2 = %f", t, y[0], y[1], y[2]);
+		term.writefln("t = %f x0 = %f s10 = %f s20 = %f x1 = %f s11 = %f s21 = %f", t, y[0], y[1], y[2], y[3], y[4], y[5]);
+	}
+
+	private void file_out(File file)
+	{
+		file.writefln("%f %f %f", t, 
+			          y[1] - y[4], 
+			          P2[0]);
 	}
 
 
@@ -295,9 +316,9 @@ class	CTrainModel: CModel
 			if (err == LUA_S_NOEXIST)
 				return -1;
 
-			m[i] = mass_coeff*mass;
-			m[i+2] = mass_coeff*mass;
-			m[i+1] = mass - m[i] - m[i+2];
+			m[k] = mass_coeff*mass;
+			m[k+2] = mass_coeff*mass;
+			m[k+1] = mass - m[k] - m[k+2];
 		}
 
 		Theta = create_matrix(mass_n, mass_n);
@@ -311,13 +332,13 @@ class	CTrainModel: CModel
 	//---------------------------------------------------------------
 	int couplings_init()
 	{
-		fwd_coup = new CCoupling[nv];
-		bwd_coup = new CCoupling[nv];
+		fwd_coup = new CEFCoupling[nv];
+		bwd_coup = new CEFCoupling[nv];
 
 		for (int i = 0; i < nv; i++)
 		{
-			fwd_coup[i] = new CCoupling();
-			bwd_coup[i] = new CCoupling();
+			fwd_coup[i] = new CEFCoupling();
+			bwd_coup[i] = new CEFCoupling();
 
 			fwd_coup[i].reset();
 			bwd_coup[i].reset();
@@ -343,37 +364,50 @@ class	CTrainModel: CModel
 
 		double[][] A = create_matrix(2*mass_n, 2*mass_n);
 		double[][] b = create_matrix(2*mass_n, 1);
-
-		// Fill mass section
-		A[0][0] = m[k+1];
-		A[1][1] = m[k];
-		A[2][2] = m[k+2];
-
-		// Fill reacts section
+	
+		A[0][0] = m[k] + m[k+1] + m[k+2];
+		A[0][1] = m[k];
+		A[0][2] = -m[k+2];
 		A[0][3] = 1;
-		A[0][4] = -1;
-		A[0][5] = 1;
 
-		A[1][3] = -m[k]/m[k+1];
-		A[1][4] = 1 + m[k]/m[k+1];
-		A[1][5] = m[k]/m[k+1];
+		A[1][0] = m[k];
+		A[1][1] = m[k];
+		A[1][2] = 0;
+		A[1][4] = 1;
 
-		A[2][3] = m[k+2]/m[k+1];
-		A[2][4] = -m[k+2]/m[k+1];
-		A[2][5] = 1 + m[k+2]/m[k+1];
+		A[2][0] = -m[k+2];
+		A[2][1] = 0;
+		A[2][2] = m[k+2];
+		A[2][5] = 1;
 
+		for (int i = 0; i < mass_n; i++)
+			for (int j = 0; j < mass_n; j++)
+				Theta[i][j] = A[i][j];
 
-		R1[idx] = 10000;
-		R2[idx] = 0;
+		if (idx == 0)
+			R1[idx] = 0;
+		else
+			R1[idx] = R2[idx-1]; 
+
+		if (idx == nv-1)
+			R2[idx] = 0;
+		else
+			R2[idx] = get_gap_force(y[k] - y[k+4] - (y[k+2] + y[k+3]), 
+									y[k+nb] - y[k+4+nb] - (y[k+2+nb] + y[k+3+nb]),
+									-0.025,
+									0.025);
+
 
 		F[idx] = 0;
-		Bmax[idx] = 100;
+		int err = 0;
+		F[0] = lua_cfg.call_func("Traction", [t], err);
+		Bmax[idx] = 1000;
 
-		b[0][0] = F[idx];
-		b[1][0] = R1[idx] - F[idx]*m[k]/m[k+1];
-		b[2][0] = R2[idx] + F[idx]*m[k]/m[k+1];
+		b[0][0] = F[idx] + R1[idx] - R2[idx];
+		b[1][0] = R1[idx];
+		b[2][0] = R2[idx];
 
-		if (abs(y[k+nb]) < eps_v)
+		if ( (abs(y[k+nb]) < eps_v) && (abs(b[0][0]) <= Bmax[idx]) )
 		{
 			A[3][0] = 1;
 			A[3][3] = 0;
@@ -401,7 +435,8 @@ class	CTrainModel: CModel
 			A[4][1] = 0;
 			A[4][4] = 1;
 
-			b[4][0] = fwd_coup[idx].get_force(y[k+1], y[k+1+nb]);
+			b[4][0] = fwd_coup[idx].get_force(y[k+1], y[k+1+nb]) + 
+				      get_gap_force(y[k+1], y[k+1+nb], -0.09, 0.09);
 		}
 
 		//
@@ -417,13 +452,15 @@ class	CTrainModel: CModel
 			A[5][2] = 0;
 			A[5][5] = 1;
 			
-			b[5][0] = bwd_coup[idx].get_force(y[k+2], y[k+2+nb]);
+			b[5][0] = bwd_coup[idx].get_force(y[k+2], y[k+2+nb]) + 
+				      get_gap_force(y[k+2], y[k+2+nb], -0.09, 0.09);
 		}
 
-		//print_matrix(A);
-		//writeln();
-
 		gaussLEF_solver(A, b, x);
+
+		//print_matrix(A);
+
+		//writeln(x);
 
 		if (abs(y[k]) < eps_v)
 		{
@@ -449,7 +486,8 @@ class	CTrainModel: CModel
 				P1[idx] = T0;
 		}
 		else
-			P1[idx] = fwd_coup[idx].get_force(y[k+1], y[k+1+nb]);
+			P1[idx] = fwd_coup[idx].get_force(y[k+1], y[k+1+nb]) + 
+			          get_gap_force(y[k+1], y[k+1+nb], -0.09, 0.09);
 
 		if ( (abs(y[k+2]) < eps_s) && (abs(y[k+2+nb]) < eps_v) )
 		{
@@ -461,20 +499,12 @@ class	CTrainModel: CModel
 				P2[idx] = T0;
 		}
 		else
-			P2[idx] = bwd_coup[idx].get_force(y[k+2], y[k+2+nb]);
+			P2[idx] = bwd_coup[idx].get_force(y[k+2], y[k+2+nb]) + 
+					  get_gap_force(y[k+2], y[k+2+nb], -0.09, 0.09);
 
-
-
-		Theta[0][0] = m[k+1];
-		Theta[1][1] = m[k];
-		Theta[2][2] = m[k+2];
-
-
-		Q[0][0] = F[idx] + P1[idx] - P2[idx] - B[idx];
-		Q[1][0] = R1[idx] - P1[idx] - m[k]*(P1[idx] - P2[idx] - B[idx] + F[idx])/m[k+1];
-		Q[2][0] = R2[idx] - P2[idx] + m[k+2]*(P1[idx] - P2[idx] - B[idx] + F[idx])/m[k+1];
-
-		//print_matrix(Q);
+		Q[0][0] = F[idx] + R1[idx] - R2[idx] - B[idx];
+		Q[1][0] = R1[idx] - P1[idx];
+		Q[2][0] = R2[idx] - P2[idx];
 
 		gaussLEF_solver(Theta, Q, a);
 
