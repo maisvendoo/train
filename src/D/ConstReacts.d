@@ -39,18 +39,20 @@ double get_mg_force(double ds, double dv)
 double get_gap_force(double ds, double dv, double ds_min, double ds_max)
 {
 	double force = 0;
+	double c = STIFF;
+	double b = DAMP_COEFF;
 
 	if ( (ds >= ds_min) && (ds <= ds_max) )
 		force = 0;
 
 	if (ds < ds_min)
 	{
-		force = -get_mg_force(ds_min - ds, dv);
+		force = -c*pow(ds_min - ds, 1.5) + b*pow(ds_min - ds, 0.25)*dv;
 	}
 
 	if (ds > ds_max)
 	{
-		force = get_mg_force(ds - ds_max, dv);
+		force = c*pow(ds - ds_max, 1.5) + b*pow(ds - ds_max, 0.25)*dv;
 	}
 
 	return force;

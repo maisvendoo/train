@@ -14,7 +14,7 @@ solver_params =
 {
 	method		= "rkf5",	-- integration method
 	init_time	= 0,		-- initial time
-	stop_time	= 180.0,		-- stop simulation time
+	stop_time	= 300.0,		-- stop simulation time
 	step		= 1e-4,		-- time step
 	max_step	= 0.1,		-- maximal time step
 	local_err	= 1e-9		-- loacal solver error
@@ -48,15 +48,44 @@ Traction = function(t)
 
 	Fmax = 600e3
 	dFdt = 20e3
-	tmax = Fmax /dFdt
+	tmax = 30
 	force = 0
 
-	if (t <= tmax) then
+	if (t >= 0) and (t <= 30) then
 		force = dFdt*t
-	else
+	end
+
+	if (t > 30) and (t <= 60) then
 		force = Fmax
+	end
+
+	if (t > 60) and (t <= 120) then
+		force = Fmax - dFdt*(t - 60)
+	end
+
+	if (t > 120) and (t <= 150) then
+		force = -Fmax
+	end
+
+	if (t > 150) and (t <= 180) then
+		force = -Fmax + dFdt*(t - 150)
 	end
 
 	return force
 
 end
+
+---------------------------------------------------------------------
+--		Coupling parameters
+---------------------------------------------------------------------
+coupling_params = 
+{
+	c_1 = 2.57e7,
+	c_2 = 2.85e6,
+	c_k = 2.5e8,
+	beta = 0,
+	T0 = 240e3,
+	t0 = 50e3,
+	lambda = 0.09,
+	delta = 0.05
+}

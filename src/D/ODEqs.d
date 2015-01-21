@@ -7,6 +7,10 @@
 module	ODEqs;
 
 import	std.math;
+import	std.stdio;
+import	std.c.stdlib;
+
+enum	int		MAX_ITER = 10;
 
 //-------------------------------------------------------------------
 //		Alias for ODE's system function 
@@ -240,5 +244,11 @@ void rkf5_solver_step(ref double[] Y,
 							  c5*k5[i] + c6*k6[i];
 		}
 
-	} while (!ready);
+	} while ( (!ready) && (iter <= MAX_ITER) );
+
+	if (iter > MAX_ITER)
+	{
+		writeln("FAIL: Iterations limit");
+		exit(0);
+	}
 }

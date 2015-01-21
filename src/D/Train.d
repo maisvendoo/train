@@ -141,13 +141,20 @@ class	CTrainModel: CModel
 	//------------------------------------------------------------------
 	private void term_out(File term)
 	{
-		term.writefln("t = %f x0 = %f s10 = %f s20 = %f x1 = %f s11 = %f s21 = %f", t, y[0], y[1], y[2], y[3], y[4], y[5]);
+		term.writefln("t = %10.4f x0 = %10.4f s10 = %10.4f s20 = %10.4f x1 = %10.4f s11 = %10.4f s21 = %10.4f h = %10.4f ms", t, 
+			          y[0], 
+			          y[1], 
+			          y[2], 
+			          y[3], 
+			          y[4], 
+			          y[5],
+					  dt*1000);
 	}
 
 	private void file_out(File file)
 	{
 		file.writefln("%f %f %f", t, 
-			          y[1] - y[4], 
+			          y[2], 
 			          P2[0]);
 	}
 
@@ -332,6 +339,18 @@ class	CTrainModel: CModel
 	//---------------------------------------------------------------
 	int couplings_init()
 	{
+		int err = 0;
+
+		double c_1 = lua_cfg.get_double_field("coupling_params", "c_1", err);
+
+		if (err == LUA_S_NOEXIST)
+			c_1 = 2.57e7;
+
+		double c_2 = lua_cfg.get_double_field("coupling_params", "c_2", err);
+
+		if (err == LUA_S_NOEXIST)
+			c_2 = 2.85e6;
+
 		fwd_coup = new CEFCoupling[nv];
 		bwd_coup = new CEFCoupling[nv];
 
@@ -344,7 +363,7 @@ class	CTrainModel: CModel
 			bwd_coup[i].reset();
 		}
 
-		return 0;
+		return err;
 	}
 
 
@@ -401,7 +420,7 @@ class	CTrainModel: CModel
 		F[idx] = 0;
 		int err = 0;
 		F[0] = lua_cfg.call_func("Traction", [t], err);
-		Bmax[idx] = 1000;
+		Bmax[idx] = 10000;
 
 		b[0][0] = F[idx] + R1[idx] - R2[idx];
 		b[1][0] = R1[idx];
