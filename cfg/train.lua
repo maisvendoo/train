@@ -14,10 +14,10 @@ solver_params =
 {
 	method		= "rkf5",	-- integration method
 	init_time	= 0,		-- initial time
-	stop_time	= 300.0,		-- stop simulation time
+	stop_time	= 300.0,	-- stop simulation time
 	step		= 1e-4,		-- time step
 	max_step	= 0.1,		-- maximal time step
-	local_err	= 1e-9		-- loacal solver error
+	local_err	= 1e-9		-- local solver error
 }
 
 ---------------------------------------------------------------------
@@ -70,6 +70,10 @@ Traction = function(t)
 	if (t > 150) and (t <= 180) then
 		force = -Fmax + dFdt*(t - 150)
 	end
+
+	if (t > 180) then
+		force = 0
+	end 
 
 	return force
 

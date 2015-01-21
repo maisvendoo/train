@@ -64,8 +64,8 @@ class	CEFCoupling: CCoupling
 
 		if (calls_count == 0)
 		{
-			T_prev = abs(T_cur);
-			ds_prev = abs(ds);
+			T_prev = T_cur;
+			ds_prev = ds;
 		}
 
 		calls_count++;
