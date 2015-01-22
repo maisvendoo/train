@@ -55,6 +55,9 @@ class	CTrainModel: CModel
 
 		CEFCoupling[]	fwd_coup;
 		CEFCoupling[]	bwd_coup;
+
+		double			lambda;
+		double			delta;
 	}
 
 
@@ -84,6 +87,9 @@ class	CTrainModel: CModel
 		this.lua_cfg = new CLuaScript();
 
 		set_dimension(2);
+
+		this.lambda = 0.09;
+		this.delta = 0.01;
 	}
 
 
@@ -351,6 +357,16 @@ class	CTrainModel: CModel
 		if (err == LUA_S_NOEXIST)
 			c_2 = 2.85e6;
 
+		lambda = lua_cfg.get_double_field("coupling_params", "lambda", err);
+
+		if (err == LUA_S_NOEXIST)
+			lambda = 0.09;
+
+		delta = lua_cfg.get_double_field("coupling_params", "delta", err);
+
+		if (err == LUA_S_NOEXIST)
+			delta = 0.01;
+
 		fwd_coup = new CEFCoupling[nv];
 		bwd_coup = new CEFCoupling[nv];
 
@@ -374,7 +390,7 @@ class	CTrainModel: CModel
 	double[] get_accels(double[] Y, double t, int idx)
 	{
 		double	eps_v = 1e-10;
-		double	eps_s = 1e-10;
+		double	eps_s = 1e-3;
 
 		int k = mass_n*idx;
 
@@ -413,8 +429,8 @@ class	CTrainModel: CModel
 		else
 			R2[idx] = get_gap_force(y[k] - y[k+4] - (y[k+2] + y[k+3]), 
 									y[k+nb] - y[k+4+nb] - (y[k+2+nb] + y[k+3+nb]),
-									-0.025,
-									0.025);
+									-delta/2,
+									 delta/2);
 
 
 		F[idx] = 0;
@@ -442,7 +458,7 @@ class	CTrainModel: CModel
 		}
 
 		//
-		if ( (abs(y[k+1]) < eps_s) && (abs(y[k+1+nb]) < eps_v) )
+		if ( (abs(y[k+1]) < eps_s) /*&& (abs(y[k+1+nb]) < eps_v)*/ )
 		{
 			A[4][1] = 1;
 			A[4][4] = 0;
@@ -455,11 +471,11 @@ class	CTrainModel: CModel
 			A[4][4] = 1;
 
 			b[4][0] = fwd_coup[idx].get_force(y[k+1], y[k+1+nb]) + 
-				      get_gap_force(y[k+1], y[k+1+nb], -0.09, 0.09);
+				      get_gap_force(y[k+1], y[k+1+nb], -lambda, lambda);
 		}
 
 		//
-		if ( (abs(y[k+2]) < eps_s) && (abs(y[k+2+nb]) < eps_v) )
+		if ( (abs(y[k+2]) < eps_s) /*&& (abs(y[k+2+nb]) < eps_v)*/ )
 		{
 			A[5][2] = 1;
 			A[5][5] = 0;
@@ -472,7 +488,7 @@ class	CTrainModel: CModel
 			A[5][5] = 1;
 			
 			b[5][0] = bwd_coup[idx].get_force(y[k+2], y[k+2+nb]) + 
-				      get_gap_force(y[k+2], y[k+2+nb], -0.09, 0.09);
+				      get_gap_force(y[k+2], y[k+2+nb], -lambda, lambda);
 		}
 
 		gaussLEF_solver(A, b, x);
@@ -495,7 +511,7 @@ class	CTrainModel: CModel
 		else
 			B[idx] = Bmax[idx]*sign(y[k+nb]);
 
-		if ( (abs(y[k+1]) < eps_s) && (abs(y[k+1+nb]) < eps_v) )
+		if ( (abs(y[k+1]) < eps_s) /*&& (abs(y[k+1+nb]) < eps_v)*/ )
 		{
 			double T0 = fwd_coup[idx].get_init_force();
 
@@ -506,9 +522,9 @@ class	CTrainModel: CModel
 		}
 		else
 			P1[idx] = fwd_coup[idx].get_force(y[k+1], y[k+1+nb]) + 
-			          get_gap_force(y[k+1], y[k+1+nb], -0.09, 0.09);
+			          get_gap_force(y[k+1], y[k+1+nb], -lambda, lambda);
 
-		if ( (abs(y[k+2]) < eps_s) && (abs(y[k+2+nb]) < eps_v) )
+		if ( (abs(y[k+2]) < eps_s) /*&& (abs(y[k+2+nb]) < eps_v)*/ )
 		{
 			double T0 = bwd_coup[idx].get_init_force();
 			
@@ -519,7 +535,7 @@ class	CTrainModel: CModel
 		}
 		else
 			P2[idx] = bwd_coup[idx].get_force(y[k+2], y[k+2+nb]) + 
-					  get_gap_force(y[k+2], y[k+2+nb], -0.09, 0.09);
+					  get_gap_force(y[k+2], y[k+2+nb], -lambda, lambda);
 
 		Q[0][0] = F[idx] + R1[idx] - R2[idx] - B[idx];
 		Q[1][0] = R1[idx] - P1[idx];

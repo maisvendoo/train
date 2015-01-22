@@ -28,7 +28,7 @@ class	CEFCoupling: CCoupling
 		this.T_prev = this.T0;
 
 		this.c = this.ck;
-		this.beta = 0;
+		this.beta = 100;
 	}
 
 	double get_force(double ds, double dv)
@@ -37,25 +37,41 @@ class	CEFCoupling: CCoupling
 
 		T_cur = abs(T_prev) + c*(abs(ds) - abs(ds_prev)) + beta*dv;
 
-		if (ds*ds_prev < 0)
-			T_prev = T0;
+		/*if (ds*ds_prev < 0)
+			T_prev = T0;*/
 
 		if (ds*dv >= 0)
 		{
-			c = c1;
-			beta = 0;
-		}
-		else
-		{
-			if (abs(T_cur) >= F2(abs(ds)))
+			if (abs(ds) <= T0/(ck - c1))
 			{
 				c = ck;
 				beta = this.beta;
 			}
 			else
 			{
-				c = c2;
+				c = c1;
 				beta = 0;
+			}
+		}
+		else
+		{
+			if (abs(ds) <= t0/(ck - c2))
+			{
+				c = ck;
+				beta = this.beta;
+			}
+			else
+			{
+				if (abs(T_cur) >= F2(abs(ds)))
+				{
+					c = ck;
+					beta = 0;//this.beta;
+				}
+				else
+				{
+					c = c2;
+					beta = 0;
+				}
 			}
 		}
 
