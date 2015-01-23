@@ -59,6 +59,8 @@ class	CTrainModel: CModel
 		double			delta;		// Coupling gap value
 
 		double[]		dy;			// Initial gap values
+
+		double[]		Time;		// Simulation time points
 	}
 
 
@@ -314,6 +316,13 @@ class	CTrainModel: CModel
 
 		err = set_initc();
 
+		Time = new double[1];
+		Time[0] = t0;
+
+		Time ~= 0.1;
+
+		int nt = cast(int) Time.length;
+
 		return err;
 	}
 
@@ -413,7 +422,7 @@ class	CTrainModel: CModel
 				dy[i] = 0;
 		}
 
-		for (int i = 0; i < nv; i++)
+		for (int i = 0; i < nv-1; i++)
 		{
 			int k = i*mass_n;
 
