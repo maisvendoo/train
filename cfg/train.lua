@@ -55,25 +55,26 @@ Traction = function(t)
 		force = dFdt*t
 	end
 
-	if (t > 30) and (t <= 60) then
+	if (t > 30) then
 		force = Fmax
 	end
 
-	--[[if (t > 60) and (t <= 120) then
-		force = Fmax - dFdt*(t - 60)
-	end
+	--if (t > 60) and (t <= 120) then
+	--	force = Fmax - dFdt*(t - 60)
+	--end
 
-	if (t > 120) and (t <= 150) then
-		force = -Fmax
-	end
+	--if (t > 120) and (t <= 150) then
+	--	force = -Fmax
+	--end
 
-	if (t > 150) and (t <= 180) then
-		force = -Fmax + dFdt*(t - 150)
-	end]]--
+	--if (t > 150) and (t <= 180) then
+	--	force = -Fmax + dFdt*(t - 150)
+	--end
 
-	if (t > 60) then
-		force = 0
-	end 
+	--if (t > 60) then
+	--	force = 0
+	--end 
+	 
 
 	return force
 
@@ -99,7 +100,7 @@ coupling_params =
 ---------------------------------------------------------------------
 
 local delta = coupling_params.delta
-local delta_eps = 0
+local delta_eps = 1.0
 
 delta_initc = {}
 
