@@ -60,7 +60,26 @@ class	CTrainModel: CModel
 
 		double[]		dy;			// Initial gap values
 
+		// Calculated data arrays
 		double[]		Time;		// Simulation time points
+		double[][]		x;			
+		double[][]		s1;
+		double[][]		s2;
+		double[][]		v;			// Velocities
+		double[][]		u1;
+		double[][]		u2;
+		double[][]		Trac;		// Traction forces
+		double[][]		W;			// Resistens forces
+		double[][]		G;			// Gravity forces
+		double[][]		FwdCoup;	//
+		double[][]		BwdCoup;
+		double[][]		FwdGap;
+		double[][]		BwdGap;	
+
+		bool			first_reg;
+		double			reg_time;
+
+		double			reg_dtime;
 	}
 
 
@@ -93,6 +112,11 @@ class	CTrainModel: CModel
 
 		this.lambda = 0.09;
 		this.delta = 0.01;
+
+		this.first_reg = true;
+		this.reg_time = 0;
+
+		this.reg_dtime = 0.01;
 	}
 
 
@@ -127,8 +151,10 @@ class	CTrainModel: CModel
 	//------------------------------------------------------------------
 	override protected void process() 
 	{
-		while (t < t_end)
+		while (t <= t_end)
 		{
+			save_reg_data(t, reg_dtime, dt);
+
 			// Data output (for debug)
 			terminal.print(0.01, dt);
 			file_log.print(0.01, dt);
@@ -146,6 +172,13 @@ class	CTrainModel: CModel
 			// Simulation time increnent
 			t += dt;
 		}
+
+		double Af = forces_work();
+		double dEk = kinetic_energy_change();
+
+		stdout.writefln("Forces work: %f J", Af);
+		stdout.writefln("Change of kinetic energy: %f J", dEk);
+		stdout.writefln("Relative integration error: %f", abs((Af - dEk)/dEk));
 	}
 
 
@@ -316,12 +349,7 @@ class	CTrainModel: CModel
 
 		err = set_initc();
 
-		Time = new double[1];
-		Time[0] = t0;
-
-		Time ~= 0.1;
-
-		int nt = cast(int) Time.length;
+		err = init_reg_data();
 
 		return err;
 	}
@@ -553,5 +581,116 @@ class	CTrainModel: CModel
 		a[2] = (R2[idx] - P2[idx] + m[k+2]*a[1])/m[k+2];
 
 		return a;
+	}
+
+
+
+	//---------------------------------------------------------------
+	//
+	//---------------------------------------------------------------
+	int init_reg_data()
+	{
+		x		= new double[][nv];
+		s1		= new double[][nv];
+		s2		= new double[][nv];
+		v		= new double[][nv];
+		u1		= new double[][nv];
+		u2		= new double[][nv];
+		Trac	= new double[][nv];
+		W		= new double[][nv];
+		G		= new double[][nv];
+		FwdCoup	= new double[][nv];
+		BwdCoup	= new double[][nv];
+		FwdGap	= new double[][nv];
+		BwdGap	= new double[][nv];
+
+		return 0;
+	}
+
+
+
+	//---------------------------------------------------------------
+	//
+	//---------------------------------------------------------------
+	void save_reg_data(double t, double delta_t, double dt)
+	{
+		if ( first_reg || (reg_time >= delta_t) )
+		{
+			first_reg = false;
+			reg_time = 0;
+
+			Time ~= t;
+
+			for (int i = 0; i < nv; i++)
+			{
+				int k = i*mass_n;
+
+				x[i]		~= y[k+1];
+				s1[i]		~= y[k];
+				s2[i]		~= y[k+2];
+
+				v[i]		~= y[k+1+nb];
+				u1[i]		~= y[k+nb];
+				u2[i]		~= y[k+2+nb];
+
+				Trac[i]		~= F[i];
+				W[i]		~= B[i];
+				G[i]		~= 0;
+				FwdCoup[i]	~= P1[i];
+				BwdCoup[i]	~= P2[i];
+				FwdGap[i]	~= R1[i];
+				BwdGap[i]	~= R2[i];
+			}
+		}
+
+		reg_time += dt;
+	}
+
+
+
+	//---------------------------------------------------------------
+	//
+	//---------------------------------------------------------------
+	double forces_work()
+	{
+		double	A = 0;
+		int		N = cast(int) Time.length; 
+
+		for (int i = 0; i < nv; i++)
+		{
+			for (int j = 0; j < N-1; j++)
+				A += ( Trac[i][j]*v[i][j] - 
+					   W[i][j]*v[i][j] +
+					   G[i][j]*v[i][j] - 
+					   FwdCoup[i][j]*u1[i][j] -
+					   BwdCoup[i][j]*u2[i][j] +
+					   FwdGap[i][j]*u1[i][j] +
+					   BwdGap[i][j]*u2[i][j])*(Time[j+1] - Time[j]);	
+
+		}
+
+		return A;
+	}
+
+
+
+	//---------------------------------------------------------------
+	//
+	//---------------------------------------------------------------
+	double kinetic_energy_change()
+	{
+		double	Ek1 = 0;
+		double	Ek2 = 0;
+		int		N = cast(int) Time.length;
+
+		for (int i = 0; i < nv; i++)
+		{
+			int k = i*mass_n;
+
+			Ek1 += (m[k]*pow(v[i][0] + u1[i][0], 2)/2 + m[k+1]*pow(v[i][0], 2)/2 + m[k+2]*pow(v[i][0] - u2[i][0], 2)/2);
+			Ek2 += (m[k]*pow(v[i][N-1] + u1[i][N-1], 2)/2 + m[k+1]*pow(v[i][N-1], 2)/2 + m[k+2]*pow(v[i][N-1] - u2[i][N-1], 2)/2);
+		}
+
+		return Ek2 - Ek1;
 	}
 }
