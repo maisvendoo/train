@@ -37,31 +37,31 @@ class	CEFCoupling: CCoupling
 
 		T_cur = abs(T_prev) + c*(abs(ds) - abs(ds_prev)) + beta*dv;
 
-		/*if (ds*ds_prev < 0)
-			T_prev = T0;*/
+		if (ds*ds_prev < 0)
+			T_prev = T0;
 
 		if (ds*dv >= 0)
 		{
-			if (abs(ds) <= T0/(ck - c1))
+			/*if (abs(ds) <= T0/(ck - c1))
 			{
 				c = ck;
 				beta = this.beta;
 			}
 			else
-			{
+			{*/
 				c = c1;
 				beta = 0;
-			}
+			//}
 		}
 		else
 		{
-			if (abs(ds) <= t0/(ck - c2))
+			/*if (abs(ds) <= t0/(ck - c2))
 			{
 				c = ck;
 				beta = this.beta;
-			}
-			else
-			{
+			}*/
+			//else
+			//{
 				if (abs(T_cur) >= F2(abs(ds)))
 				{
 					c = ck;
@@ -72,7 +72,7 @@ class	CEFCoupling: CCoupling
 					c = c2;
 					beta = 0;
 				}
-			}
+			//}
 		}
 
 		T_cur = (abs(T_prev) + c*(abs(ds) - abs(ds_prev)))*sign(ds) + beta*dv;

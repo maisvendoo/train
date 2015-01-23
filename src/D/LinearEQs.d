@@ -194,9 +194,9 @@ void gaussLEF_solver(const double[][] A, const double[][] b, ref double[] x)
 	}
 
 	// Tmp matrixes
-	double[][] A1 = create_matrix(n, n+1);
-	double[][] A2 = create_matrix(n, n+1);
-	double[][] A3 = create_matrix(n, n+1);
+	double[][] A1 = new double[][](n, n+1); 
+	double[][] A2 = new double[][](n, n+1); 
+	double[][] A3 = new double[][](n, n+1);
 
 	// Prepare tmp matrixes
 	for (int i = 0; i < n; i++)
