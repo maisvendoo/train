@@ -27,43 +27,38 @@ class	CTrainModel: CModel
 	//---------------------------------------------------------------
 	private
 	{
-		uint		nv;
-		uint		nb;
-		uint		ode_dim;
-		uint		mass_n;
+		uint		nv;				// Numbel of vehicles
+		uint		nb;				// Number of bodies in train model
+		uint		ode_dim;		// ODE system dimencion
+		uint		mass_n;			// Number of mass in vahicle model
 
-		string		couplig_type;
+		string		couplig_type;	// Coupling type
 
-		double		v0;
-		double		railway_coord;
+		double		v0;				// Initial velocity
+		double		railway_coord;	// Railway coordinate
 
-		double[]	m;
+		double[]	m;				// Vehicles mass array
 
-		CLogFile	terminal;
+		CLogFile	terminal;		
 		CLogFile	file_log;
+
 		CLuaScript	lua_cfg;
 
-		double[]	F;
-		double[]	R1;
-		double[]	R2;
-		double[]	P1;
-		double[]	P2;
-		double[]	B;
-		double[]	Bmax;
+		double[]	F;				// Traction forces
+		double[]	R1;				// Forward gap reaction
+		double[]	R2;				// Backward gap reaction
+		double[]	P1;				// Forward coupling force
+		double[]	P2;				// Backward coupling force
+		double[]	B;				// Brake force
+		double[]	Bmax;			// Maximal brake force
 
-		double[][][]	Theta;
-		double[][]		Q;
+		CEFCoupling[]	fwd_coup;	// Forward couplings
+		CEFCoupling[]	bwd_coup;	// Backward couplings
 
-		CEFCoupling[]	fwd_coup;
-		CEFCoupling[]	bwd_coup;
+		double			lambda;		// Coupling movement range
+		double			delta;		// Coupling gap value
 
-		double			lambda;
-		double			delta;
-
-		double[][][]	A;
-		double[][]		b;
-
-		double[]		dy;
+		double[]		dy;			// Initial gap values
 	}
 
 
@@ -132,16 +127,21 @@ class	CTrainModel: CModel
 	{
 		while (t < t_end)
 		{
+			// Data output (for debug)
 			terminal.print(0.01, dt);
 			file_log.print(0.01, dt);
+
+			// Integration step
 			step();
 
+			// Couplings reset
 			for (int i = 0; i < nv; i++)
 			{
 				fwd_coup[i].reset();
 				bwd_coup[i].reset();
 			}
 
+			// Simulation time increnent
 			t += dt;
 		}
 	}
@@ -317,8 +317,6 @@ class	CTrainModel: CModel
 		return err;
 	}
 
-
-
 	//---------------------------------------------------------------
 	//
 	//---------------------------------------------------------------
@@ -344,43 +342,6 @@ class	CTrainModel: CModel
 			m[k+2] = mass_coeff*mass;
 			m[k+1] = mass - m[k] - m[k+2];
 		}
-
-		Theta = new double[][][](nv, mass_n, mass_n);
-		Q = create_matrix(mass_n, 1);
-
-		A = new double[][][](nv, 2*mass_n, 2*mass_n);
-
-		for (int i = 0; i < nv; i++)
-			for (int j = 0; j < 2*mass_n; j++)
-				for (int k = 0; k < 2*mass_n; k++)
-					A[i][j][k] = 0;
-
-		for (int i = 0; i < nv; i++)
-		{
-			int k = i*mass_n;
-
-			A[i][0][0] = m[k] + m[k+1] + m[k+2];
-			A[i][0][1] = m[k];
-			A[i][0][2] = -m[k+2];
-			A[i][0][3] = 1;
-
-			A[i][1][0] = m[k];
-			A[i][1][1] = m[k];
-			A[i][1][2] = 0;
-			A[i][1][4] = 1;
-
-			A[i][2][0] = -m[k+2];
-			A[i][2][1] = 0;
-			A[i][2][2] = m[k+2];
-			A[i][2][5] = 1;
-		}
-
-		for (int i = 0; i < nv; i++)
-			for (int j = 0; j < mass_n; j++)
-				for (int k = 0; k < mass_n; k++)
-					Theta[i][j][k] = A[i][j][k];
-
-		b = create_matrix(2*mass_n, 1);
 
 		return 0;
 	}
@@ -479,14 +440,15 @@ class	CTrainModel: CModel
 	//---------------------------------------------------------------
 	double[] get_accels(double[] Y, double t, int idx)
 	{
-		double	eps_v = 1e-10;
-		double	eps_s = 1e-3;
+		double	eps_v	= 1e-3;
+		double	eps_s	= 1e-4;
+		int		err		= 0;
 
 		int k = mass_n*idx;
 
-		double[] x = new double[2*mass_n];
 		double[] a = new double[mass_n];
 
+		// Gap forces calculation
 		if (idx == 0)
 			R1[idx] = 0;
 		else
@@ -500,115 +462,83 @@ class	CTrainModel: CModel
 									-delta/2,
 									 delta/2);
 
+		// Other active forces calculation
 		F[idx] = 0;
-		int err = 0;
-		F[0] = 0;//lua_cfg.call_func("Traction", [t], err);
+
+		// Brake forces calculation
 		Bmax[idx] = 1000;
 		Bmax[0] = lua_cfg.call_func("Traction", [t], err);
 
-		b[0][0] = F[idx] + R1[idx] - R2[idx];
-		b[1][0] = R1[idx];
-		b[2][0] = R2[idx];
+		// Resistive force precheck
+		double Fa = F[idx] + R1[idx] - R2[idx];
 
-		if ( (abs(y[k+1+nb]) < eps_v) && (abs(b[0][0]) <= Bmax[idx]) )
+		if ( (abs(y[k+1+nb]) < eps_v) && (abs(Fa) <= Bmax[idx]) )
 		{
-			A[idx][3][0] = 1;
-			A[idx][3][3] = 0;
-
-			b[3][0] = 0;
+			B[idx] = Fa;
 		}
 		else
 		{
-			A[idx][3][0] = 0;
-			A[idx][3][3] = 1;
-
-			b[3][0] = Bmax[idx]*sign(y[k+1+nb]);
+			B[idx] = Bmax[idx]*sign(y[k+1+nb]);
 		}
 
-		//
-		if ( (abs(y[k]) < eps_s) /*&& (abs(y[k+1+nb]) < eps_v)*/ )
-		{
-			A[idx][4][1] = 1;
-			A[idx][4][4] = 0;
+		//  Vehicle body acceleration
+		a[1] = (F[idx] + R1[idx] - R2[idx] - B[idx])/(m[k] + m[k+1] + m[k+2]);
 
-			b[4][0] = 0;
+		// Forward coupling force
+		if (abs(y[k]) < eps_s)
+		{
+			P1[idx] = R1[idx] - m[k]*a[1];
 		}
 		else
 		{
-			A[idx][4][1] = 0;
-			A[idx][4][4] = 1;
-
-			b[4][0] = fwd_coup[idx].get_force(y[k], y[k+nb]) + 
+			P1[idx] = fwd_coup[idx].get_force(y[k], y[k+nb]) + 
 				      get_gap_force(y[k], y[k+nb], -lambda, lambda);
 		}
 
-		//
-		if ( (abs(y[k+2]) < eps_s) /*&& (abs(y[k+2+nb]) < eps_v)*/ )
+		// Backward coupling force
+		if (abs(y[k+2]) < eps_s)
 		{
-			A[idx][5][2] = 1;
-			A[idx][5][5] = 0;
-			
-			b[5][0] = 0;
+			P2[idx] = R2[idx] + m[k+2]*a[1];
 		}
 		else
 		{
-			A[idx][5][2] = 0;
-			A[idx][5][5] = 1;
-			
-			b[5][0] = bwd_coup[idx].get_force(y[k+2], y[k+2+nb]) + 
+			P2[idx] = bwd_coup[idx].get_force(y[k+2], y[k+2+nb]) + 
 				      get_gap_force(y[k+2], y[k+2+nb], -lambda, lambda);
 		}
 
-		gaussLEF_solver(A[idx], b, x);
-
-		//writeln(x);
-
+		// Brake force calculation
 		if (abs(y[k+1]) < eps_v)
 		{
-			if (abs(x[3]) <= Bmax[idx])
-			{
-				B[idx] = x[3];
-			}
-			else
-			{
-				B[idx] = Bmax[idx]*sign(x[3]);
-			}
+			if (abs(B[idx]) > Bmax[idx])
+				B[idx] = Bmax[idx]*sign(B[idx]);
 		}
 		else
 			B[idx] = Bmax[idx]*sign(y[k+1+nb]);
 
-		if ( (abs(y[k]) < eps_s) /*&& (abs(y[k+1+nb]) < eps_v)*/ )
+		// Coupling forces calculation
+		if (abs(y[k]) < eps_s)
 		{
 			double T0 = fwd_coup[idx].get_init_force();
 
-			if (abs(x[4]) <= T0)
-				P1[idx] = x[4];
-			else
+			if (abs(P1[idx]) > T0)
 				P1[idx] = T0;
 		}
 		else
 			P1[idx] = fwd_coup[idx].get_force(y[k], y[k+nb]) + 
 			          get_gap_force(y[k], y[k+nb], -lambda, lambda);
 
-		if ( (abs(y[k+2]) < eps_s) /*&& (abs(y[k+2+nb]) < eps_v)*/ )
+		if (abs(y[k+2]) < eps_s)
 		{
 			double T0 = bwd_coup[idx].get_init_force();
 			
-			if (abs(x[5]) <= T0)
-				P2[idx] = x[5];
-			else
+			if (abs(P2[idx]) > T0)
 				P2[idx] = T0;
 		}
 		else
 			P2[idx] = bwd_coup[idx].get_force(y[k+2], y[k+2+nb]) + 
 					  get_gap_force(y[k+2], y[k+2+nb], -lambda, lambda);
 
-		/*Q[0][0] = F[idx] + R1[idx] - R2[idx] - B[idx];
-		Q[1][0] = R1[idx] - P1[idx];
-		Q[2][0] = R2[idx] - P2[idx];
-
-		gaussLEF_solver(Theta[idx], Q, a);*/
-
+		// Final accelleraion calculation
 		a[1] = (F[idx] + P1[idx] - P2[idx] - B[idx])/m[k+1];
 		a[0] = (R1[idx] - P1[idx] - m[k]*a[1])/m[k];
 		a[2] = (R2[idx] - P2[idx] + m[k+2]*a[1])/m[k+2];
