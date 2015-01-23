@@ -75,6 +75,7 @@ class	CTrainModel: CModel
 		double[][]		BwdCoup;
 		double[][]		FwdGap;
 		double[][]		BwdGap;	
+		double[][]		Power;
 
 		bool			first_reg;
 		double			reg_time;
@@ -178,7 +179,7 @@ class	CTrainModel: CModel
 
 		stdout.writefln("Forces work: %f J", Af);
 		stdout.writefln("Change of kinetic energy: %f J", dEk);
-		stdout.writefln("Relative integration error: %f", abs((Af - dEk)/dEk));
+		stdout.writefln("Relative integration error: %f %c", abs((Af - dEk)*100/dEk), '%');
 	}
 
 
@@ -603,6 +604,7 @@ class	CTrainModel: CModel
 		BwdCoup	= new double[][nv];
 		FwdGap	= new double[][nv];
 		BwdGap	= new double[][nv];
+		Power	= new double[][nv];
 
 		return 0;
 	}
@@ -640,6 +642,9 @@ class	CTrainModel: CModel
 				BwdCoup[i]	~= P2[i];
 				FwdGap[i]	~= R1[i];
 				BwdGap[i]	~= R2[i];
+
+				Power[i]	~= F[i]*y[k+1+nb] - B[i]*y[k+1+nb] - P1[i]*y[k+nb] - P2[i]*y[k+2+nb] +
+					           R1[i]*y[k+nb] + R2[i]*y[k+2+nb];
 			}
 		}
 
@@ -659,13 +664,7 @@ class	CTrainModel: CModel
 		for (int i = 0; i < nv; i++)
 		{
 			for (int j = 0; j < N-1; j++)
-				A += ( Trac[i][j]*v[i][j] - 
-					   W[i][j]*v[i][j] +
-					   G[i][j]*v[i][j] - 
-					   FwdCoup[i][j]*u1[i][j] -
-					   BwdCoup[i][j]*u2[i][j] +
-					   FwdGap[i][j]*u1[i][j] +
-					   BwdGap[i][j]*u2[i][j])*(Time[j+1] - Time[j]);	
+				A += (Power[i][j] + Power[i][j+1])*(Time[j+1] - Time[j])/2;
 
 		}
 
