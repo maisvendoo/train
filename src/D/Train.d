@@ -413,7 +413,7 @@ class	CTrainModel: CModel
 				dy[i] = 0;
 		}
 
-		for (int i = 0; i < nv; i++)
+		for (int i = 0; i < nv-1; i++)
 		{
 			int k = i*mass_n;
 
