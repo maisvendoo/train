@@ -17,6 +17,8 @@ import	EFCoupling;
 import	LinearEQs;
 import	ConstReacts;
 
+import	CondDestruct;
+
 //-------------------------------------------------------------------
 //		General train  model class
 //-------------------------------------------------------------------
@@ -181,6 +183,13 @@ class	CTrainModel: CModel
 		}
 
 		error_estimate();
+
+		double J = get_cond_destruct(BwdCoup)	+ 
+			       get_cond_destruct(FwdCoup)	+
+				   get_cond_destruct(BwdGap)	+
+				   get_cond_destruct(FwdGap);
+
+		stdout.writefln("Conditional destruction: %f", J);
 	}
 
 
