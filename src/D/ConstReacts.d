@@ -1,4 +1,10 @@
-﻿module	ConstReacts;
+﻿//-------------------------------------------------------------------
+//
+//		Contact and strike reaction calculation module
+//		(c) maisvendoo, 2015/01/19
+//
+//-------------------------------------------------------------------
+module	ConstReacts;
 
 import	std.math;
 
@@ -6,7 +12,7 @@ enum	double	STIFF		= 1e9;
 enum	double	DAMP_COEFF	= 1e7;
 
 //-------------------------------------------------------------------
-//
+//		Kelvin-Focht force
 //-------------------------------------------------------------------
 double get_kf_force(double ds, double dv)
 {
@@ -17,7 +23,7 @@ double get_kf_force(double ds, double dv)
 }
 
 //-------------------------------------------------------------------
-//
+//		Modifed Herz contact-strike force
 //-------------------------------------------------------------------
 double get_mg_force(double ds, double dv)
 {
@@ -34,7 +40,7 @@ double get_mg_force(double ds, double dv)
 }
 
 //-------------------------------------------------------------------
-//
+//		Reaction in mechanism's gaps
 //-------------------------------------------------------------------
 double get_gap_force(double ds, double dv, double ds_min, double ds_max)
 {
