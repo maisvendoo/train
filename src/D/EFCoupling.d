@@ -1,11 +1,20 @@
-﻿module	EFCoupling;
+﻿//-------------------------------------------------------------------
+//
+//		Elastic-friction coupling model
+//		(c) maisvendoo, 2015/01/19
+//
+//-------------------------------------------------------------------
+module	EFCoupling;
 
 import	MathFuncs;
 
-public import	Coupling;
+public 
+{
+	import	Coupling;
+}
 
 //-------------------------------------------------------------------
-//
+//		Elastic-friction coupling class
 //-------------------------------------------------------------------
 class	CEFCoupling: CCoupling
 {
@@ -31,15 +40,17 @@ class	CEFCoupling: CCoupling
 		this.beta = 100;
 	}
 
+
+
+	//---------------------------------------------------------------
+	//		Coupling force calculation
+	//---------------------------------------------------------------
 	double get_force(double ds, double dv)
 	{
 		double beta = 0;
 		double eps_ds = 1e-3;
 
 		T_cur = abs(T_prev) + c*(abs(ds) - abs(ds_prev)) + beta*dv;
-
-		/*if (ds*ds_prev < 0)
-			T_prev = T0;*/		 
 
 		if (ds*dv >= 0)
 		{
@@ -76,8 +87,47 @@ class	CEFCoupling: CCoupling
 		return T_cur;
 	}
 
+
+
+
+	//---------------------------------------------------------------
+	//		Release force calculation
+	//---------------------------------------------------------------
 	double F2(double x)
 	{
 		return t0 + c2*x;
+	}
+
+
+
+
+	//---------------------------------------------------------------
+	//		Set coupling stiffnesses
+	//---------------------------------------------------------------
+	void set_stiffs(double c1, double c2, double ck)
+	{
+		this.c1 = c1;
+		this.c2 = c2;
+		this.ck = ck;
+	}
+
+
+
+	//---------------------------------------------------------------
+	//
+	//---------------------------------------------------------------
+	void set_damp_coeff(double beta)
+	{
+		this.beta = beta;
+	}
+
+
+
+	//---------------------------------------------------------------
+	//
+	//---------------------------------------------------------------
+	void set_release_init_force(double t0)
+	{
+		this.t0 = t0;
 	}
 }
