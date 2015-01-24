@@ -64,6 +64,7 @@
     <Compile Include="src\D\ConstReacts.d" />
     <Compile Include="src\D\EFCoupling.d" />
     <Compile Include="src\D\CondDestruct.d" />
+    <Compile Include="src\D\Brakes.d" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />

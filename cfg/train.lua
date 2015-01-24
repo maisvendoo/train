@@ -14,7 +14,7 @@ solver_params =
 {
 	method		= "rkf5",	-- integration method
 	init_time	= 0,		-- initial time
-	stop_time	= 30.0,	-- stop simulation time
+	stop_time	= 1000.0,	-- stop simulation time
 	step		= 1e-4,		-- time step
 	max_step	= 0.1,		-- maximal time step
 	local_err	= 1e-10		-- local solver error
@@ -25,10 +25,10 @@ solver_params =
 ---------------------------------------------------------------------
 train_model = 
 {
-	vehicles_num 	= 50,
+	vehicles_num 	= 100,
 	coupling_type	= "default",
 	railway_coord	= 1500,			-- initial railway coordinate (km)
-	init_velocity	= 36			-- initial velocity (km/h)
+	init_velocity	= 90			-- initial velocity (km/h)
 }
 
 train_model.railway_coord = train_model.railway_coord*km

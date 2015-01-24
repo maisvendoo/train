@@ -19,6 +19,8 @@ import	ConstReacts;
 
 import	CondDestruct;
 
+import	Brakes;
+
 //-------------------------------------------------------------------
 //		General train  model class
 //-------------------------------------------------------------------
@@ -87,6 +89,8 @@ class	CTrainModel: CModel
 
 		double			term_dtime;
 		double			log_dtime;
+
+		CBrakes			brakes;
 	}
 
 
@@ -126,6 +130,8 @@ class	CTrainModel: CModel
 		this.reg_dtime = 0.01;
 		this.term_dtime = 0.01;
 		this.log_dtime = 0.01;
+
+		this.brakes = new CBrakes();
 	}
 
 
@@ -160,7 +166,9 @@ class	CTrainModel: CModel
 	//------------------------------------------------------------------
 	override protected void process() 
 	{
-		while (t <= t_end)
+		double eps_v = 1e-3;
+
+		while ( (t <= t_end) && (abs(y[(nv-1)*mass_n+1+nb]) >= eps_v) )
 		{
 			save_reg_data(t, reg_dtime, dt);
 
@@ -169,6 +177,7 @@ class	CTrainModel: CModel
 			file_log.print(log_dtime, dt);
 
 			// Integration step
+			brakes.process(t, dt);
 			step();
 
 			// Couplings reset
@@ -229,6 +238,10 @@ class	CTrainModel: CModel
 
 		if (read_lua_config(cfg_name) == -1)
 			return -1;
+
+		brakes.set_vehicles_num(nv);
+		brakes.init();
+		brakes.set_valve_pos(SERVICE_BRAKE);
 
 		return err;
 	}
@@ -573,8 +586,7 @@ class	CTrainModel: CModel
 		F[idx] = 0;
 
 		// Brake forces calculation
-		Bmax[idx] = 1000;
-		Bmax[0] = lua_cfg.call_func("Traction", [t], err);
+		Bmax[idx] = brakes.get_brake_force(idx, y[k+1+nb]);
 
 		// Resistive force precheck
 		double Fa = F[idx] + R1[idx] - R2[idx];
