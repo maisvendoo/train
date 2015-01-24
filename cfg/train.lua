@@ -14,7 +14,7 @@ solver_params =
 {
 	method		= "rkf5",	-- integration method
 	init_time	= 0,		-- initial time
-	stop_time	= 20.0,	-- stop simulation time
+	stop_time	= 200.0,	-- stop simulation time
 	step		= 1e-4,		-- time step
 	max_step	= 0.1,		-- maximal time step
 	local_err	= 1e-10		-- local solver error
@@ -88,7 +88,7 @@ coupling_params =
 	c_1 = 2.57e7,
 	c_2 = 2.85e6,
 	c_k = 2.5e8,
-	beta = 0,
+	beta = 100,
 	T0 = 240e3,
 	t0 = 50e3,
 	lambda = 0.09,
