@@ -25,7 +25,7 @@ solver_params =
 ---------------------------------------------------------------------
 train_model = 
 {
-	vehicles_num 	= 100,
+	vehicles_num 	= 70,
 	coupling_type	= "default",
 	railway_coord	= 1500,			-- initial railway coordinate (km)
 	init_velocity	= 90			-- initial velocity (km/h)
@@ -40,7 +40,11 @@ mass_coeff = 0.02
 
 for i = 1, train_model.vehicles_num do
 
-	vehicle_mass[i] = 85e3
+	if (i < 50) then
+		vehicle_mass[i] = 25e3
+	else
+		vehicle_mass[i] = 85e3
+	end
 
 end
 

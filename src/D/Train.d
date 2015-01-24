@@ -168,7 +168,7 @@ class	CTrainModel: CModel
 	{
 		double eps_v = 1e-3;
 
-		while ( (t <= t_end) && (abs(y[(nv-1)*mass_n+1+nb]) >= eps_v) )
+		while ( (t <= t_end) && (abs(y[nb+1]) >= eps_v) )
 		{
 			save_reg_data(t, reg_dtime, dt);
 
@@ -221,9 +221,12 @@ class	CTrainModel: CModel
 
 	private void file_out(File file)
 	{
+		int i = 50;
+		int k = i*mass_n;
+
 		file.writefln("%f %f %f %f", t, 
-			          y[2], 
-			          P2[0],
+			          y[k+2], 
+			          R2[i],
 					  y[nb+1]);
 	}
 
