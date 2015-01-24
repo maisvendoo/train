@@ -25,7 +25,7 @@ solver_params =
 ---------------------------------------------------------------------
 train_model = 
 {
-	vehicles_num 	= 70,
+	vehicles_num 	= 100,
 	coupling_type	= "default",
 	railway_coord	= 1500,			-- initial railway coordinate (km)
 	init_velocity	= 36			-- initial velocity (km/h)
@@ -88,7 +88,7 @@ coupling_params =
 	c_1 = 2.57e7,
 	c_2 = 2.85e6,
 	c_k = 2.5e8,
-	beta = 0,
+	beta = 100,
 	T0 = 240e3,
 	t0 = 50e3,
 	lambda = 0.09,
