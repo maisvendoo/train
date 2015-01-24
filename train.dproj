@@ -28,7 +28,6 @@
     <UnittestMode>false</UnittestMode>
     <OutputName>train</OutputName>
     <Target>Executable</Target>
-    <Externalconsole>true</Externalconsole>
     <DebugLevel>0</DebugLevel>
     <ExtraLinkerArguments>-llua</ExtraLinkerArguments>
     <ConsolePause>false</ConsolePause>
