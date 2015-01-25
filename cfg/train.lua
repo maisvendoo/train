@@ -28,7 +28,7 @@ train_model =
 	vehicles_num 	= 70,
 	coupling_type	= "default",
 	railway_coord	= 1500,			-- initial railway coordinate (km)
-	init_velocity	= 90			-- initial velocity (km/h)
+	init_velocity	= 110			-- initial velocity (km/h)
 }
 
 train_model.railway_coord = train_model.railway_coord*km
