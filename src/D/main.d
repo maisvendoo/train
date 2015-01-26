@@ -7,8 +7,20 @@
 module	main;
 
 import	std.stdio;
+import	std.getopt;
 
 import	Train;
+
+//-------------------------------------------------------------------
+//
+//-------------------------------------------------------------------
+struct TTrainParams
+{
+	int		nv;
+	double	railway_coord;
+	double	v0;
+	double	delta_eps;
+}
 
 //-------------------------------------------------------------------
 //
@@ -16,7 +28,10 @@ import	Train;
 void main(string[] args)
 {
 	// Get config Lua script name from command line
-	string	cfg_script = args[1];
+	string	cfg_script;
+
+	// Read options from command line
+	getopt(args, "cfg", &cfg_script);
 
 	// Model creation
 	CTrainModel model = new CTrainModel();

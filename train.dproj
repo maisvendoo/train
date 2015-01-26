@@ -65,6 +65,8 @@
     <Compile Include="src\D\EFCoupling.d" />
     <Compile Include="src\D\CondDestruct.d" />
     <Compile Include="src\D\Brakes.d" />
+    <Compile Include="src\D\MainResForces.d" />
+    <Compile Include="src\D\physics.d" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />

@@ -25,10 +25,10 @@ solver_params =
 ---------------------------------------------------------------------
 train_model = 
 {
-	vehicles_num 	= 70,
+	vehicles_num	= 70,
 	coupling_type	= "default",
 	railway_coord	= 1500,			-- initial railway coordinate (km)
-	init_velocity	= 110			-- initial velocity (km/h)
+	init_velocity	= 50			-- initial velocity (km/h)
 }
 
 train_model.railway_coord = train_model.railway_coord*km
@@ -38,49 +38,17 @@ vehicle_mass = {}
 
 mass_coeff = 0.02
 
+local payload_coeff = 0.0
+local payload_mass = 60e3
+local empty_mass = 25e3
+
 for i = 1, train_model.vehicles_num do
 
-	if (i < 50) then
-		vehicle_mass[i] = 25e3
+	if (i == 1) or (i == 2) then
+		vehicle_mass[i] = 96e3
 	else
-		vehicle_mass[i] = 85e3
+		vehicle_mass[i] = empty_mass + payload_coeff*payload_mass
 	end
-
-end
-
-Traction = function(t)
-
-	Fmax = 600e3
-	dFdt = 20e3
-	tmax = 30
-	force = 0
-
-	if (t >= 0) and (t <= 30) then
-		force = dFdt*t
-	end
-
-	if (t > 30) then
-		force = Fmax
-	end
-
-	--if (t > 60) and (t <= 120) then
-	--	force = Fmax - dFdt*(t - 60)
-	--end
-
-	--if (t > 120) and (t <= 150) then
-	--	force = -Fmax
-	--end
-
-	--if (t > 150) and (t <= 180) then
-	--	force = -Fmax + dFdt*(t - 150)
-	--end
-
-	--if (t > 60) then
-	--	force = 0
-	--end 
-	 
-
-	return force
 
 end
 
@@ -113,3 +81,16 @@ for i = 1, train_model.vehicles_num - 1 do
 	delta_initc[i] = delta_eps*delta/2
 
 end
+
+---------------------------------------------------------------------
+--		Brakes program
+---------------------------------------------------------------------
+valve_pos = function(t)
+
+	v_pos = 3
+
+	return v_pos
+
+end
+
+res_file = "v_90_kmh.txt"

@@ -37,11 +37,15 @@ private
 //-------------------------------------------------------------------
 //
 //-------------------------------------------------------------------
-void force_analyze(double force)
+void force_analyze(double force, ref int idx_old)
 {
 	int idx = get_interval(force);
 
-	force_count[idx]++;
+	if (idx != idx_old)
+	{
+		force_count[idx]++;
+		idx_old = idx;
+	}
 }
 
 //-------------------------------------------------------------------
@@ -50,6 +54,7 @@ void force_analyze(double force)
 double get_cond_destruct(double[][] force_array)
 {
 	double	J = 0;
+	int		idx_old = 0;
 
 	cond_destruct_init();
 
@@ -60,7 +65,7 @@ double get_cond_destruct(double[][] force_array)
 	{
 		for (int j = 0; j < np; j++)
 		{
-			force_analyze(force_array[i][j]);
+			force_analyze(force_array[i][j], idx_old);
 		}
 	}
 

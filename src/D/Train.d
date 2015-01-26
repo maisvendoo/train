@@ -16,6 +16,7 @@ import	matrix;
 import	EFCoupling;
 import	LinearEQs;
 import	ConstReacts;
+import	MainResForces;
 
 import	CondDestruct;
 
@@ -91,6 +92,10 @@ class	CTrainModel: CModel
 		double			log_dtime;
 
 		CBrakes			brakes;
+
+		double			train_mass;
+
+		string			res_file_name;
 	}
 
 
@@ -132,6 +137,10 @@ class	CTrainModel: CModel
 		this.log_dtime = 0.01;
 
 		this.brakes = new CBrakes();
+
+		this.train_mass = 0;
+
+		this.res_file_name = "result.txt";
 	}
 
 
@@ -174,7 +183,7 @@ class	CTrainModel: CModel
 
 			// Data output (for debug)
 			terminal.print(term_dtime, dt);
-			file_log.print(log_dtime, dt);
+			//file_log.print(log_dtime, dt);
 
 			// Integration step
 			brakes.process(t, dt);
@@ -199,6 +208,8 @@ class	CTrainModel: CModel
 				   get_cond_destruct(FwdGap);
 
 		stdout.writefln("Conditional destruction: %f", J);
+
+		save_result(res_file_name, nv, J);
 	}
 
 
@@ -277,6 +288,8 @@ class	CTrainModel: CModel
 		err = set_initc();
 
 		err = init_reg_data();
+
+		res_file_name = lua_cfg.get_string("res_file", err);
 
 		return err;
 	}
@@ -427,6 +440,8 @@ class	CTrainModel: CModel
 			int k = mass_n*i;
 
 			double mass = lua_cfg.get_double_field("vehicle_mass", i, err);
+
+			train_mass += mass;
 
 			if (err == LUA_S_NOEXIST)
 				return -1;
@@ -588,8 +603,14 @@ class	CTrainModel: CModel
 		// Other active forces calculation
 		F[idx] = 0;
 
+		int valve_pos = cast(int) lua_cfg.call_func("valve_pos", [t], err);
+
+		brakes.set_valve_pos(valve_pos);
+
 		// Brake forces calculation
-		Bmax[idx] = brakes.get_brake_force(idx, y[k+1+nb]);
+		double mv = m[k] + m[k+1] + m[k+2];
+
+		Bmax[idx] = brakes.get_brake_force(idx, y[k+1+nb]) + get_main_res(y[k+1+nb], mv);
 
 		// Resistive force precheck
 		double Fa = F[idx] + R1[idx] - R2[idx];
@@ -791,5 +812,19 @@ class	CTrainModel: CModel
 		stdout.writefln("Change of kinetic energy: %.2f J", dEk);
 		stdout.writefln("Relative integration error: %.2f %c", 
 			            abs((Af - dEk)*100/dEk), '%');
+	}
+
+
+
+	//---------------------------------------------------------------
+	//
+	//---------------------------------------------------------------
+	void save_result(string file_name, double param, double J)
+	{
+		File result_file = File(file_name, "a+");
+
+		result_file.writefln("%f\t%f", param, J); 
+
+		result_file.close();
 	}
 }
