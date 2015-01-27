@@ -7,7 +7,11 @@
 module	Train;
 
 import	std.stdio;
+import	std.getopt;
 
+import	physics;
+import	TrainParams;
+import	CmdLine;
 import	MathFuncs;
 import	LogFile;
 import	Model;
@@ -96,6 +100,9 @@ class	CTrainModel: CModel
 		double			train_mass;
 
 		string			res_file_name;
+
+		TTrainParams	train_params;
+		TCmdLine		cmd_line;
 	}
 
 
@@ -246,18 +253,75 @@ class	CTrainModel: CModel
 	//------------------------------------------------------------------
 	//		Initialization form Lua-script file
 	//------------------------------------------------------------------
-	int init(string cfg_name)
+	int init(string[] args)
 	{
-		int err = 0;
+		int		err = 0;
 
-		if (read_lua_config(cfg_name) == -1)
+		// Get config script name from command line args
+		with (cmd_line)
+		{
+			getopt(args, 
+			   	   "config", 		&cfg_name,
+			   	   "vehicles",		&vehicles_num,
+				   "payload_coeff",	&payload_coeff,
+				   "railway_coord", &railway_coord,
+				   "init_velocity", &init_velocity,
+				   "delta",			&delta,
+				   "delta_eps",		&delta_eps
+				   );
+		}
+
+		if (cmd_line.cfg_name == "")
+			cmd_line.cfg_name = "../../cfg/train.lua";
+
+		// Config reading
+		if (read_lua_config(cmd_line.cfg_name) == -1)
 			return -1;
+
+		cmdline_parse(cmd_line);
+
+		// Set ODE solver parameters
+		solver_init();
+		train_init();
+		mass_init();
+		couplings_init();
+		set_initc();
+		init_reg_data();
 
 		brakes.set_vehicles_num(nv);
 		brakes.init();
 		brakes.set_valve_pos(SERVICE_BRAKE);
 
 		return err;
+	}
+
+
+
+	//---------------------------------------------------------------
+	//		Set parameters from command line
+	//---------------------------------------------------------------
+	void cmdline_parse(ref TCmdLine cmd_line)
+	{
+		with (cmd_line)
+		{
+			if (vehicles_num > 0)
+				train_params.train.vehicles_num = vehicles_num;
+
+			if (payload_coeff > 0)
+				train_params.train.payload_coeff = payload_coeff;
+
+			if (railway_coord > 0)
+				train_params.train.railway_coord = railway_coord*km;
+
+			if (init_velocity > 0)
+				train_params.train.init_velocity = init_velocity/kmh;
+
+			if (delta > 0)
+				train_params.coupling.delta = delta;
+
+			if (abs(delta_eps) < 2)
+				train_params.train.delta_eps = delta_eps;
+		}
 	}
 
 	//---------------------------------------------------------------
@@ -272,24 +336,117 @@ class	CTrainModel: CModel
 		if (err == -1)
 			return err;
 
-		// Set ODE solver parameters
-		err = solver_init();
+		// Read solver params
+		with (train_params.solver)
+		{
+			method = lua_cfg.get_str_field("solver_params", "method", err);
+			
+			if (err == LUA_S_NOEXIST)
+				method = "rkf5";
 
-		// Set train model parameters
-		err = train_init();
+			init_time = lua_cfg.get_double_field("solver_params", "init_time", err);
+			
+			if (err == LUA_S_NOEXIST)
+				init_time = 0;
 
-		err = mass_init();
+			stop_time = lua_cfg.get_double_field("solver_params", "stop_time", err);
+			
+			if (err == LUA_S_NOEXIST)
+				stop_time = 1.0;
 
-		if (err == -1)
-			return err;
+			step = lua_cfg.get_double_field("solver_params", "step", err);
+			
+			if (err == LUA_S_NOEXIST)
+				step = get_time_step();
 
-		err = couplings_init();
+			max_step = lua_cfg.get_double_field("solver_params", "max_step", err);
+			
+			if (err == LUA_S_NOEXIST)
+				max_step = 0.1;
+									
+			local_err = lua_cfg.get_double_field("solver_params", "local_err", err);
+			
+			if (err == LUA_S_NOEXIST)
+				local_err = 1e-8;
+		}
 
-		err = set_initc();
+		with (train_params.train)
+		{
+			vehicles_num = lua_cfg.get_int_field("train_model", "vehicles_num", err);
 
-		err = init_reg_data();
+			if (err == LUA_S_NOEXIST)
+				vehicles_num = 1;
 
-		res_file_name = lua_cfg.get_string("res_file", err);
+			// couplig type
+			couplig_type = lua_cfg.get_str_field("train_model", "coupling_type", err);
+			
+			if (err == LUA_S_NOEXIST)
+				couplig_type = "default";
+			
+			// railway coordinate
+			railway_coord = lua_cfg.get_double_field("train_model", "railway_coord", err);
+			
+			if (err == LUA_S_NOEXIST)
+				railway_coord = 1e6;
+			
+			// initial velocity
+			init_velocity = lua_cfg.get_double_field("train_model", "init_velocity", err);
+
+			if (err == LUA_S_NOEXIST)
+				init_velocity = 0;
+
+			mass_coeff = lua_cfg.get_double_field("train_model", "mass_coeff", err);
+			payload_mass = lua_cfg.get_double_field("train_model", "payload_mass", err);
+			payload_coeff = lua_cfg.get_double_field("train_model", "payload_coeff", err);
+			empty_mass = lua_cfg.get_double_field("train_model", "empty_mass", err);
+			loco_section_mass = lua_cfg.get_double_field("train_model", "loco_section_mass", err);
+			loco_sections_num = lua_cfg.get_int_field("train_model", "loco_sections_num", err);
+
+			delta_eps = lua_cfg.get_double_field("train_model", "delta_eps", err); 
+		}
+
+		with (train_params.coupling)
+		{
+			c_1 = lua_cfg.get_double_field("coupling_params", "c_1", err);
+			
+			if (err == LUA_S_NOEXIST)
+				c_1 = 2.57e7;
+			
+			c_2 = lua_cfg.get_double_field("coupling_params", "c_2", err);
+			
+			if (err == LUA_S_NOEXIST)
+				c_2 = 2.85e6;
+			
+			c_k = lua_cfg.get_double_field("coupling_params", "c_k", err);
+			
+			if (err == LUA_S_NOEXIST)
+				c_k = 2.5e8;
+			
+			beta = lua_cfg.get_double_field("coupling_params", "beta", err);
+			
+			if (err == LUA_S_NOEXIST)
+				beta = 0;
+			
+			T0 = lua_cfg.get_double_field("coupling_params", "T0", err);
+			
+			if (err == LUA_S_NOEXIST)
+				T0 = 240e3;
+			
+			t0 = lua_cfg.get_double_field("coupling_params", "t0", err);
+			
+			if (err == LUA_S_NOEXIST)
+				t0 = 50e3;
+			
+			lambda = lua_cfg.get_double_field("coupling_params", "lambda", err);
+			
+			if (err == LUA_S_NOEXIST)
+				lambda = 0.09;
+			
+			delta = lua_cfg.get_double_field("coupling_params", "delta", err);
+			
+			if (err == LUA_S_NOEXIST)
+				delta = 0.01;
+		}
 
 		return err;
 	}
@@ -304,59 +461,23 @@ class	CTrainModel: CModel
 		int err = LUA_S_OK;
 
 		// method
-		string method = lua_cfg.get_str_field("solver_params", "method", err);
-
-		if (err == LUA_S_NOEXIST)
-			method = "rkf5";
+		with (train_params.solver)
+		{
+			if (method == "rkf5")
+				set_integration_method(&rkf5_solver_step);
 		
-		if (method == "rkf5")
-			set_integration_method(&rkf5_solver_step);
+			if (method == "rk4")
+				set_integration_method(&rk4_solver_step);
 		
-		if (method == "rk4")
-			set_integration_method(&rk4_solver_step);
+			if (method == "euler")
+				set_integration_method(&euler_solver_step);
 		
-		if (method == "euler")
-			set_integration_method(&euler_solver_step);
-		
-		// init time
-		double init_time = lua_cfg.get_double_field("solver_params", "init_time", err);
-		
-		if (err == LUA_S_NOEXIST)
-			init_time = 0;
-		
-		set_init_time(init_time);
-		
-		// stop time
-		double stop_time = lua_cfg.get_double_field("solver_params", "stop_time", err);
-		
-		if (err == LUA_S_NOEXIST)
-			stop_time = 1.0;
-		
-		set_stop_time(stop_time);
-		
-		// time step
-		double time_step = lua_cfg.get_double_field("solver_params", "step", err);
-		
-		if (err == LUA_S_NOEXIST)
-			time_step = get_time_step();
-		
-		set_time_step(time_step);
-		
-		// maximal time step
-		double max_step = lua_cfg.get_double_field("solver_params", "max_step", err);
-		
-		if (err == LUA_S_NOEXIST)
-			max_step = 0.1;
-		
-		set_max_time_step(max_step);
-		
-		// maximal time step
-		double local_err = lua_cfg.get_double_field("solver_params", "local_err", err);
-		
-		if (err == LUA_S_NOEXIST)
-			local_err = 1e-8;
-		
-		set_local_error(local_err);
+			set_init_time(init_time);
+			set_stop_time(stop_time);
+			set_time_step(step);
+			set_max_time_step(max_step);
+			set_local_error(local_err);
+		}
 
 		return 0;
 	}
@@ -371,13 +492,9 @@ class	CTrainModel: CModel
 		int err = 0;
 
 		// number of vehicles
-		nv = lua_cfg.get_int_field("train_model", "vehicles_num", err);
-		
-		if (err == LUA_S_NOEXIST)
-			nv = 1;
-		
+		nv = train_params.train.vehicles_num; 
 		nb = mass_n*nv;
-		
+
 		m = new double[nb];
 		
 		ode_dim = 2*nb;
@@ -401,22 +518,13 @@ class	CTrainModel: CModel
 		}
 		
 		// couplig type
-		couplig_type = lua_cfg.get_str_field("train_model", "coupling_type", err);
-		
-		if (err == LUA_S_NOEXIST)
-			couplig_type = "default";
-		
+		couplig_type = train_params.train.coupling_type;
+			
 		// railway coordinate
-		railway_coord = lua_cfg.get_double_field("train_model", "railway_coord", err);
-		
-		if (err == LUA_S_NOEXIST)
-			railway_coord = 1e6;
-		
+		railway_coord = train_params.train.railway_coord;
+			
 		// initial velocity
-		v0 = lua_cfg.get_double_field("train_model", "init_velocity", err);
-		
-		if (err == LUA_S_NOEXIST)
-			v0 = 0;
+		v0 = train_params.train.init_velocity; 
 
 		return 0;
 	}
@@ -430,16 +538,25 @@ class	CTrainModel: CModel
 	{
 		int err = LUA_S_OK;
 
-		double mass_coeff = lua_cfg.get_double("mass_coeff", err);
-
-		if (err == LUA_S_NOEXIST)
-			return -1;
+		double mass_coeff = train_params.train.mass_coeff;
 
 		for (int i = 0; i < nv; i++)
 		{
 			int k = mass_n*i;
 
-			double mass = lua_cfg.get_double_field("vehicle_mass", i, err);
+			double mass = 0;
+
+			if ( (i >= 0) && (i < train_params.train.loco_sections_num) )
+			{
+				mass = train_params.train.loco_section_mass;
+			}
+			else
+			{
+				with (train_params.train)
+				{
+					mass = empty_mass + payload_coeff*payload_mass;
+				}
+			}
 
 			train_mass += mass;
 
@@ -461,66 +578,32 @@ class	CTrainModel: CModel
 	{
 		int err = 0;
 
-		double c_1 = lua_cfg.get_double_field("coupling_params", "c_1", err);
-
-		if (err == LUA_S_NOEXIST)
-			c_1 = 2.57e7;
-
-		double c_2 = lua_cfg.get_double_field("coupling_params", "c_2", err);
-
-		if (err == LUA_S_NOEXIST)
-			c_2 = 2.85e6;
-
-		double c_k = lua_cfg.get_double_field("coupling_params", "c_k", err);
-
-		if (err == LUA_S_NOEXIST)
-			c_k = 2.5e8;
-
-		double beta = lua_cfg.get_double_field("coupling_params", "beta", err);
-
-		if (err == LUA_S_NOEXIST)
-			beta = 0;
-
-		double T0 = lua_cfg.get_double_field("coupling_params", "T0", err);
-
-		if (err == LUA_S_NOEXIST)
-			T0 = 240e3;
-
-		double t0 = lua_cfg.get_double_field("coupling_params", "t0", err);
-
-		if (err == LUA_S_NOEXIST)
-			t0 = 50e3;
-
-		lambda = lua_cfg.get_double_field("coupling_params", "lambda", err);
-
-		if (err == LUA_S_NOEXIST)
-			lambda = 0.09;
-
-		delta = lua_cfg.get_double_field("coupling_params", "delta", err);
-
-		if (err == LUA_S_NOEXIST)
-			delta = 0.01;
+		lambda = train_params.coupling.lambda;
+		delta = train_params.coupling.delta;
 
 		fwd_coup = new CEFCoupling[nv];
 		bwd_coup = new CEFCoupling[nv];
 
-		for (int i = 0; i < nv; i++)
+		with (train_params.coupling)
 		{
-			fwd_coup[i] = new CEFCoupling();
-			bwd_coup[i] = new CEFCoupling();
+			for (int i = 0; i < nv; i++)
+			{
+				fwd_coup[i] = new CEFCoupling();
+				bwd_coup[i] = new CEFCoupling();
 
-			fwd_coup[i].set_stiffs(c_1, c_2, c_k);
-			fwd_coup[i].set_damp_coeff(beta);
-			fwd_coup[i].set_init_force(T0);
-			fwd_coup[i].set_release_init_force(t0);
+				fwd_coup[i].set_stiffs(c_1, c_2, c_k);
+				fwd_coup[i].set_damp_coeff(beta);
+				fwd_coup[i].set_init_force(T0);
+				fwd_coup[i].set_release_init_force(t0);
 
-			bwd_coup[i].set_stiffs(c_1, c_2, c_k);
-			bwd_coup[i].set_damp_coeff(beta);
-			bwd_coup[i].set_init_force(T0);
-			bwd_coup[i].set_release_init_force(t0);
+				bwd_coup[i].set_stiffs(c_1, c_2, c_k);
+				bwd_coup[i].set_damp_coeff(beta);
+				bwd_coup[i].set_init_force(T0);
+				bwd_coup[i].set_release_init_force(t0);
 
-			fwd_coup[i].reset();
-			bwd_coup[i].reset();
+				fwd_coup[i].reset();
+				bwd_coup[i].reset();
+			}
 		}
 
 		return err;
@@ -545,10 +628,7 @@ class	CTrainModel: CModel
 
 		for (int i = 0; i < nv-1; i++)
 		{
-			dy[i] = lua_cfg.get_double_field("delta_initc", i, err);
-
-			if (err == LUA_S_NOTTABLE)
-				dy[i] = 0;
+			dy[i] = train_params.train.delta_eps*delta/2; 
 		}
 
 		for (int i = 0; i < nv-1; i++)

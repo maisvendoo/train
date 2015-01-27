@@ -28,17 +28,24 @@ train_model =
 	vehicles_num	= 70,
 	coupling_type	= "default",
 	railway_coord	= 1500,			-- initial railway coordinate (km)
-	init_velocity	= 10			-- initial velocity (km/h)
+	init_velocity	= 10,			-- initial velocity (km/h)
+	mass_coeff	= 0.02,
+	payload_mass	= 60e3,
+	empty_mass	= 25e3,
+	payload_coeff	= 0.0,
+	loco_section_mass	= 96e3,
+	loco_sections_num	= 2,
+	delta_eps	= -1.0
 }
 
 train_model.railway_coord = train_model.railway_coord*km
 train_model.init_velocity = train_model.init_velocity / kmh
 
-vehicle_mass = {}
+--[[vehicle_mass = {}
 
 mass_coeff = 0.02
 
-local payload_coeff = 0.0
+payload_coeff = 0.0
 local payload_mass = 60e3
 local empty_mass = 25e3
 
@@ -50,7 +57,7 @@ for i = 1, train_model.vehicles_num do
 		vehicle_mass[i] = empty_mass + payload_coeff*payload_mass
 	end
 
-end
+end]]--
 
 ---------------------------------------------------------------------
 --		Coupling parameters
@@ -71,7 +78,7 @@ coupling_params =
 --	Initial conditions (coupling's gaps)
 ---------------------------------------------------------------------
 
-local delta = coupling_params.delta
+--[[local delta = coupling_params.delta
 local delta_eps = -1.0
 
 delta_initc = {}
@@ -80,7 +87,7 @@ for i = 1, train_model.vehicles_num - 1 do
 
 	delta_initc[i] = delta_eps*delta/2
 
-end
+end]]--
 
 ---------------------------------------------------------------------
 --		Brakes program

@@ -6,6 +6,7 @@
 //-------------------------------------------------------------------
 module	Brakes;
 
+import	physics;
 import	MathFuncs;
 import	std.stdio;
 
@@ -46,7 +47,7 @@ enum	int		AXIS				= 4;
 enum	int		SHOES				= 2;
 
 enum	double	TONN_2_FORCE		= 9810.0;
-enum	double	kmh					= 3.6;
+//enum	double	kmh					= 3.6;
 
 //-------------------------------------------------------------------
 //

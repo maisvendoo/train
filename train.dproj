@@ -20,6 +20,7 @@
     <DebugLevel>0</DebugLevel>
     <ExtraLinkerArguments>-llua</ExtraLinkerArguments>
     <ConsolePause>false</ConsolePause>
+    <Commandlineparameters>--vehicles=5</Commandlineparameters>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <OutputPath>bin\Release</OutputPath>
@@ -67,6 +68,8 @@
     <Compile Include="src\D\Brakes.d" />
     <Compile Include="src\D\MainResForces.d" />
     <Compile Include="src\D\physics.d" />
+    <Compile Include="src\D\TrainParams.d" />
+    <Compile Include="src\D\CmdLine.d" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
