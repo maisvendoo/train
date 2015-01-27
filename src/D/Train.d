@@ -182,7 +182,7 @@ class	CTrainModel: CModel
 			save_reg_data(t, reg_dtime, dt);
 
 			// Data output (for debug)
-			terminal.print(term_dtime, dt);
+			//terminal.print(term_dtime, dt);
 			//file_log.print(log_dtime, dt);
 
 			// Integration step
@@ -200,16 +200,16 @@ class	CTrainModel: CModel
 			t += dt;
 		}
 
-		error_estimate();
+		//error_estimate();
 
 		double J = get_cond_destruct(BwdCoup)	+ 
 			       get_cond_destruct(FwdCoup)	+
 				   get_cond_destruct(BwdGap)	+
 				   get_cond_destruct(FwdGap);
 
-		stdout.writefln("Conditional destruction: %f", J);
+		stdout.write(J);
 
-		save_result(res_file_name, nv, J);
+		//save_result(res_file_name, nv, J);
 	}
 
 
