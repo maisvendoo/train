@@ -103,6 +103,9 @@ class	CTrainModel: CModel
 
 		TTrainParams	train_params;
 		TCmdLine		cmd_line;
+
+		bool			term_out_flag;
+		string			log_file_name;
 	}
 
 
@@ -126,8 +129,8 @@ class	CTrainModel: CModel
 		terminal.set_print_func(&this.term_out);
 
 		file_log = new CLogFile();
-		file_log.init("log.txt");
-		file_log.set_print_func(&this.file_out);
+		//file_log.init("log.txt");
+		//file_log.set_print_func(&this.file_out);
 
 		this.lua_cfg = new CLuaScript();
 
@@ -148,6 +151,9 @@ class	CTrainModel: CModel
 		this.train_mass = 0;
 
 		this.res_file_name = "result.txt";
+
+		this.term_out_flag = false;
+		this.log_file_name = "";
 	}
 
 
@@ -189,8 +195,11 @@ class	CTrainModel: CModel
 			save_reg_data(t, reg_dtime, dt);
 
 			// Data output (for debug)
-			//terminal.print(term_dtime, dt);
-			//file_log.print(log_dtime, dt);
+			if (term_out_flag)
+				terminal.print(term_dtime, dt);
+
+			if (log_file_name != "")
+				file_log.print(log_dtime, dt);
 
 			// Integration step
 			brakes.process(t, dt);
@@ -242,10 +251,12 @@ class	CTrainModel: CModel
 		int i = 50;
 		int k = i*mass_n;
 
-		file.writefln("%f %f %f %f", t, 
-			          y[k+2], 
-			          R2[i],
-					  y[nb+1]);
+		file.writefln("%f %f %f %f %f %f", t, 
+			          y[k+1] - y[k+4], 
+			          R2[1]/1000,
+					  R2[nv/2]/1000,
+			          R1[nv-1]/1000,
+					  y[nb+1]*kmh);
 	}
 
 
@@ -267,7 +278,9 @@ class	CTrainModel: CModel
 				   "railway_coord", &railway_coord,
 				   "init_velocity", &init_velocity,
 				   "delta",			&delta,
-				   "delta_eps",		&delta_eps
+				   "delta_eps",		&delta_eps,
+				   "term_out",		&term_out,
+				   "log_file",		&log_file
 				   );
 		}
 
@@ -321,6 +334,16 @@ class	CTrainModel: CModel
 
 			if (abs(delta_eps) < 2)
 				train_params.train.delta_eps = delta_eps;
+
+			if (log_file != "")
+			{
+				log_file_name = log_file;
+				file_log.init(log_file_name);
+				file_log.set_print_func(&this.file_out);
+			}
+
+			if (term_out)
+				term_out_flag = true;
 		}
 	}
 

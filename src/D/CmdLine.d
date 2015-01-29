@@ -21,6 +21,9 @@ struct TCmdLine
 	double	delta;
 	double	delta_eps;
 
+	bool	term_out;
+	string	log_file;
+
 	this(this)
 	{
 		this.cfg_name		= "";
@@ -30,5 +33,7 @@ struct TCmdLine
 		this.init_velocity	= -1;
 		this.delta			= -1;
 		this.delta_eps		= 2;
+		this.term_out		= false;
+		this.log_file		= "";
 	}
 }
