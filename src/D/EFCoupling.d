@@ -48,7 +48,14 @@ class	CEFCoupling: CCoupling
 	double get_force(double ds, double dv)
 	{
 		double beta = 0;
-		double eps_ds = 1e-3;
+		double eps_ds = 1e-4;
+
+		/*if (abs(ds) < eps_ds)
+		{
+			//T_prev = T0;
+			ds_prev = ds;
+			return T0*sign(ds);
+		}*/
 
 		T_cur = abs(T_prev) + c*(abs(ds) - abs(ds_prev)) + beta*dv;
 
@@ -78,7 +85,20 @@ class	CEFCoupling: CCoupling
 
 		if (calls_count == 0)
 		{
-			T_prev = T_cur;
+			if (ds*dv >= 0)
+			{
+				T_prev = T_cur;
+			}
+			else
+			{
+				/*if (ds*ds_prev < 0)
+				{
+					T_prev = T0;
+				}
+				else*/
+					T_prev = T_cur;
+			}
+
 			ds_prev = ds;
 		}
 
@@ -129,5 +149,10 @@ class	CEFCoupling: CCoupling
 	void set_release_init_force(double t0)
 	{
 		this.t0 = t0;
+	}
+
+	void set_prev_force()
+	{
+		this.T_prev = T0;
 	}
 }

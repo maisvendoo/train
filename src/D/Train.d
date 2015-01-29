@@ -248,11 +248,11 @@ class	CTrainModel: CModel
 
 	private void file_out(File file)
 	{
-		int i = 50;
+		int i = nv/2;
 		int k = i*mass_n;
 
 		file.writefln("%f %f %f %f %f %f", t, 
-			          y[k+1] - y[k+4], 
+			          y[k+2] + y[k+3] + y[k+1] - y[k+4], 
 			          R2[1]/1000,
 					  R2[nv/2]/1000,
 			          R1[nv-1]/1000,
@@ -768,10 +768,14 @@ class	CTrainModel: CModel
 
 			if (abs(P1[idx]) > T0)
 				P1[idx] = T0;
+
+			fwd_coup[idx].set_prev_force();
 		}
 		else
+		{
 			P1[idx] = fwd_coup[idx].get_force(y[k], y[k+nb]) + 
 			          get_gap_force(y[k], y[k+nb], -lambda, lambda);
+		}
 
 		if (abs(y[k+2]) < eps_s)
 		{
@@ -779,10 +783,14 @@ class	CTrainModel: CModel
 			
 			if (abs(P2[idx]) > T0)
 				P2[idx] = T0;
+
+			bwd_coup[idx].set_prev_force();
 		}
 		else
+		{
 			P2[idx] = bwd_coup[idx].get_force(y[k+2], y[k+2+nb]) + 
 					  get_gap_force(y[k+2], y[k+2+nb], -lambda, lambda);
+		}
 
 		// Final accelleraion calculation
 		a[1] = (F[idx] + P1[idx] - P2[idx] - B[idx])/m[k+1];
