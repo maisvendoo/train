@@ -354,6 +354,40 @@ class	CLuaScript
 			return ret;
 		}
 
+		string get_str_field(string table, int idx, int err)
+		{
+			string ret = "";
+
+			top = lua_gettop(L);
+
+			lua_getglobal(L, cast(char*) table);
+
+			if (lua_istable(L, -1))
+			{
+				int index = lua_gettop(L);
+				int count = 0;
+				lua_pushnil(L);
+
+				while ( (lua_next(L, index) != 0) && (count <= idx) )
+				{
+					ret = lua_tostring(L, -1);
+					lua_pop(L, 1);
+					count++;
+				}
+
+				err = LUA_S_OK;
+			}
+			else
+			{
+				err = LUA_S_NOTTABLE;
+				ret = "";
+			}
+
+			restore_stack();
+
+			return ret;
+		}
+
 		// Call Lua function
 		double call_func(string func, double[] args, ref int err)
 		{
