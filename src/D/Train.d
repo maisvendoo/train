@@ -104,6 +104,9 @@ class	CTrainModel: CModel
 
 		bool			term_out_flag;
 		string			log_file_name;
+
+		double			Tmax;
+		double			Tmin;
 	}
 
 
@@ -148,6 +151,9 @@ class	CTrainModel: CModel
 
 		this.term_out_flag = false;
 		this.log_file_name = "";
+
+		this.Tmax = 0;
+		this.Tmin = 0;
 	}
 
 
@@ -192,8 +198,8 @@ class	CTrainModel: CModel
 			if (term_out_flag)
 				terminal.print(term_dtime, dt);
 
-			if (log_file_name != "")
-				file_log.print(log_dtime, dt);
+			/*if (log_file_name != "")
+				file_log.print(log_dtime, dt);*/
 
 			// Integration step
 			brakes.process(t, dt);
@@ -210,12 +216,23 @@ class	CTrainModel: CModel
 			t += dt;
 		}
 
+		double error = error_estimate();
+
 		double J = get_cond_destruct(BwdCoup)	+ 
 			       get_cond_destruct(FwdCoup)	+
 				   get_cond_destruct(BwdGap)	+
 				   get_cond_destruct(FwdGap);
 
-		stdout.write(J);
+		found_max_forces();
+
+		print_log();
+
+		// Program output in stdout
+		stdout.writeln(train_mass/TONN);	// 0
+		stdout.writeln(J);					// 1
+		stdout.writeln(error);				// 2
+		stdout.writeln(Tmax/kN);			// 3
+		stdout.writeln(Tmin/kN);			// 4
 	}
 
 
@@ -893,14 +910,69 @@ class	CTrainModel: CModel
 	//---------------------------------------------------------------
 	//
 	//---------------------------------------------------------------
-	void error_estimate()
+	double error_estimate()
 	{
+		double error = 0;
+
 		double Af = forces_work();
 		double dEk = kinetic_energy_change();
 		
-		stdout.writefln("Forces work: %.2f J", Af);
-		stdout.writefln("Change of kinetic energy: %.2f J", dEk);
-		stdout.writefln("Relative integration error: %.2f %c", 
-			            abs((Af - dEk)*100/dEk), '%');
+		if (abs(dEk) < ZERO)
+		{
+			error = 0;
+		}
+		else
+		{
+			error = (1 - abs(Af)/abs(dEk))*100;
+		}
+
+		return error;
+	}
+
+	//---------------------------------------------------------------
+	//
+	//---------------------------------------------------------------
+	void found_max_forces()
+	{
+		int		N = cast(int) Time.length;
+
+		for (int i = 0; i < N; i++)
+		{
+			for (int j = 0; j < nv; j++)
+			{
+				if (Tmax < BwdGap[j][i])
+					Tmax = BwdGap[j][i];
+
+				if (Tmin > BwdGap[j][i])
+					Tmin = BwdGap[j][i];
+			}
+		}
+	}
+
+	//---------------------------------------------------------------
+	//
+	//---------------------------------------------------------------
+	void print_log()
+	{
+		if (log_file_name == "")
+			return;
+
+		int N = cast(int) Time.length;
+
+		File log = File(log_file_name, "wt");
+
+		for (int i = 0; i < N; i++)
+		{
+			log.writef("%f ", Time[i]);
+
+			for (int j = 0; j < nv-1; j++)
+			{
+				log.writef("%f ", BwdGap[j][i]/kN);
+			}
+
+			log.writeln();
+		}
+
+		log.close();
 	}
 }
