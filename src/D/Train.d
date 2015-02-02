@@ -99,8 +99,6 @@ class	CTrainModel: CModel
 
 		double			train_mass;
 
-		string			res_file_name;
-
 		TTrainParams	train_params;
 		TCmdLine		cmd_line;
 
@@ -129,8 +127,6 @@ class	CTrainModel: CModel
 		terminal.set_print_func(&this.term_out);
 
 		file_log = new CLogFile();
-		//file_log.init("log.txt");
-		//file_log.set_print_func(&this.file_out);
 
 		this.lua_cfg = new CLuaScript();
 
@@ -143,14 +139,12 @@ class	CTrainModel: CModel
 		this.reg_time = 0;
 
 		this.reg_dtime = 0.01;
-		this.term_dtime = 0.01;
+		this.term_dtime = 0.001;
 		this.log_dtime = 0.01;
 
 		this.brakes = new CBrakes();
 
 		this.train_mass = 0;
-
-		this.res_file_name = "result.txt";
 
 		this.term_out_flag = false;
 		this.log_file_name = "";
@@ -216,16 +210,12 @@ class	CTrainModel: CModel
 			t += dt;
 		}
 
-		//error_estimate();
-
 		double J = get_cond_destruct(BwdCoup)	+ 
 			       get_cond_destruct(FwdCoup)	+
 				   get_cond_destruct(BwdGap)	+
 				   get_cond_destruct(FwdGap);
 
 		stdout.write(J);
-
-		//save_result(res_file_name, nv, J);
 	}
 
 
@@ -235,28 +225,17 @@ class	CTrainModel: CModel
 	//------------------------------------------------------------------
 	private void term_out(File term)
 	{
-		term.writefln("t = %10.4f x0 = %10.4f v0 = %10.4f s10 = %10.4f s20 = %10.4f x1 = %10.4f s11 = %10.4f s21 = %10.4f h = %10.4f ms", t, 
-			          y[1],
-					  y[nb+1],	
-			          y[0], 
-			          y[2], 
-			          y[4], 
-			          y[3], 
-			          y[5],
-					  dt*1000);
+		term.writef("Time: %10.4f s | Progress: %6.2f %c\r", t, 100 - y[nb+1]*100/v0, '%');  
 	}
 
 	private void file_out(File file)
 	{
-		int i = nv/2;
-		int k = i*mass_n;
+		file.writef("%f ", t);
 
-		file.writefln("%f %f %f %f %f %f", t, 
-			          y[k+2] + y[k+3] + y[k+1] - y[k+4], 
-			          R2[1]/1000,
-					  R2[nv/2]/1000,
-			          R1[nv-1]/1000,
-					  y[nb+1]*kmh);
+		for (int i = 0; i < nv-1; i++)
+			file.writef("%f ", R2[i]/1000);
+
+		file.writeln();
 	}
 
 
@@ -923,19 +902,5 @@ class	CTrainModel: CModel
 		stdout.writefln("Change of kinetic energy: %.2f J", dEk);
 		stdout.writefln("Relative integration error: %.2f %c", 
 			            abs((Af - dEk)*100/dEk), '%');
-	}
-
-
-
-	//---------------------------------------------------------------
-	//
-	//---------------------------------------------------------------
-	void save_result(string file_name, double param, double J)
-	{
-		File result_file = File(file_name, "a+");
-
-		result_file.writefln("%f\t%f", param, J); 
-
-		result_file.close();
 	}
 }
