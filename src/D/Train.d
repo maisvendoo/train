@@ -316,8 +316,14 @@ class	CTrainModel: CModel
 			if (vehicles_num > 0)
 				train_params.train.vehicles_num = vehicles_num;
 
-			if (payload_coeff > 0)
+			if (payload_coeff >= 0)
+			/*{
+				train_params.train.payload_coeff = 0.0;
+			}
+			else*/
+			{
 				train_params.train.payload_coeff = payload_coeff;
+			}
 
 			if (railway_coord > 0)
 				train_params.train.railway_coord = railway_coord*km;
@@ -579,8 +585,8 @@ class	CTrainModel: CModel
 
 			train_mass += mass;
 
-			if (err == LUA_S_NOEXIST)
-				return -1;
+			/*if (err == LUA_S_NOEXIST)
+				return -1;*/
 
 			m[k] = mass_coeff*mass;
 			m[k+2] = mass_coeff*mass;
@@ -968,6 +974,11 @@ class	CTrainModel: CModel
 			for (int j = 0; j < nv-1; j++)
 			{
 				log.writef("%f ", BwdGap[j][i]/kN);
+			}
+
+			for (int j = 0; j < nv-1; j++)
+			{
+				log.writef("%f ", (x[j][i] - x[j+1][i] + s1[j+1][i] + s2[j][i])*1000.0);
 			}
 
 			log.writeln();

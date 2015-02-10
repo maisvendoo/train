@@ -57,10 +57,6 @@
     <Compile Include="src\D\Model.d" />
     <Compile Include="src\D\ODEqs.d" />
     <Compile Include="src\D\Train.d" />
-    <Compile Include="src\D\lua_d_api\lauxlib.d" />
-    <Compile Include="src\D\lua_d_api\lua.d" />
-    <Compile Include="src\D\lua_d_api\luaconf.d" />
-    <Compile Include="src\D\lua_d_api\lualib.d" />
     <Compile Include="src\D\Coupling.d" />
     <Compile Include="src\D\ConstReacts.d" />
     <Compile Include="src\D\EFCoupling.d" />
@@ -70,6 +66,10 @@
     <Compile Include="src\D\physics.d" />
     <Compile Include="src\D\TrainParams.d" />
     <Compile Include="src\D\CmdLine.d" />
+    <Compile Include="src\D\lua_d_api\lauxlib.d" />
+    <Compile Include="src\D\lua_d_api\lua.d" />
+    <Compile Include="src\D\lua_d_api\luaconf.d" />
+    <Compile Include="src\D\lua_d_api\lualib.d" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
