@@ -684,7 +684,7 @@ class	CTrainModel: CModel
 	double[] get_accels(double[] Y, double t, int idx)
 	{
 		double	eps_v	= 1e-3;
-		double	eps_s	= 1e-4;
+		double	eps_s	= 1e-5;
 		int		err		= 0;
 
 		int k = mass_n*idx;
@@ -708,7 +708,14 @@ class	CTrainModel: CModel
 		// Other active forces calculation
 		F[idx] = 0;
 
-		int valve_pos = cast(int) lua_cfg.call_func("valve_pos", [t], err);
+		double Ft = lua_cfg.call_func("traction", [t, y[1+nb]], err);
+
+		for (int i = 0; i < train_params.train.loco_sections_num; i++)
+		{
+			F[i] = Ft;
+		}
+
+		int valve_pos = cast(int) lua_cfg.call_func("valve_pos", [t, y[1+nb]], err);
 
 		brakes.set_valve_pos(valve_pos);
 
@@ -978,7 +985,8 @@ class	CTrainModel: CModel
 
 			for (int j = 0; j < nv-1; j++)
 			{
-				log.writef("%f ", (x[j][i] - x[j+1][i] + s1[j+1][i] + s2[j][i])*1000.0);
+				//log.writef("%f ", (x[j][i] - x[j+1][i] + s1[j+1][i] + s2[j][i])*1000.0);
+				log.writef("%f ", s2[j][i]*1000.0);
 			}
 
 			log.writeln();

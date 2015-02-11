@@ -16,7 +16,7 @@ solver_params =
 	init_time	= 0,		-- initial time
 	stop_time	= 1000.0,	-- stop simulation time
 	step		= 1e-4,		-- time step
-	max_step	= 0.1,		-- maximal time step
+	max_step	= 1e-4,		-- maximal time step
 	local_err	= 1e-10		-- local solver error
 }
 
@@ -92,12 +92,39 @@ end]]--
 ---------------------------------------------------------------------
 --		Brakes program
 ---------------------------------------------------------------------
-valve_pos = function(t)
+valve_pos = function(t, v)
 
 	v_pos = 3
 
 	return v_pos
 
+end
+
+---------------------------------------------------------------------
+--    Traction program
+---------------------------------------------------------------------
+traction = function(t, v)
+  
+  force = 0
+  dFdt = 1e4
+  Fmax = 300e3
+  
+  --[[if (math.abs(v) < 78) then
+    force = dFdt*t
+    
+    if (force > Fmax) then
+      force = Fmax
+    end
+    
+  else
+    
+    force = 0
+    
+  end ]]--
+  
+  
+  return force
+  
 end
 
 res_file = "v_90_kmh.txt"

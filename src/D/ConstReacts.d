@@ -36,6 +36,9 @@ double get_mg_force(double ds, double dv)
 	else
 		force = c*pow(ds, 1.5) + b*pow(ds, 0.25)*dv;
 
+	if (force < 0)
+		force = 0;
+
 	return force;
 }
 
@@ -53,12 +56,14 @@ double get_gap_force(double ds, double dv, double ds_min, double ds_max)
 
 	if (ds < ds_min)
 	{
-		force = -c*pow(ds_min - ds, 1.5) + b*pow(ds_min - ds, 0.25)*dv;
+		//force = -c*pow(ds_min - ds, 1.5) + b*pow(ds_min - ds, 0.25)*dv;
+		force = -get_mg_force(ds_min - ds, -dv);
 	}
 
 	if (ds > ds_max)
 	{
-		force = c*pow(ds - ds_max, 1.5) + b*pow(ds - ds_max, 0.25)*dv;
+		//force = c*pow(ds - ds_max, 1.5) + b*pow(ds - ds_max, 0.25)*dv;
+		force = get_mg_force(ds - ds_max, dv);
 	}
 
 	return force;

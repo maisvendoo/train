@@ -10,7 +10,10 @@ import	std.math;
 import	std.stdio;
 import	std.c.stdlib;
 
-enum	int		MAX_ITER = 10;
+private
+{
+	enum	int		MAX_ITER	= 10;
+}
 
 //-------------------------------------------------------------------
 //		Alias for ODE's system function 

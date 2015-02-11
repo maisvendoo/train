@@ -57,7 +57,7 @@ class	CEFCoupling: CCoupling
 			return T0*sign(ds);
 		}*/
 
-		T_cur = abs(T_prev) + c*(abs(ds) - abs(ds_prev)) + beta*dv;
+		//T_cur = abs(T_prev) + c*(abs(ds) - abs(ds_prev)) + beta*dv;
 
 		if (ds*dv >= 0)
 		{
@@ -66,7 +66,7 @@ class	CEFCoupling: CCoupling
 		}
 		else
 		{
-			if (abs(T_cur) >= F2(abs(ds)))
+			if (abs(T_prev) >= F2(abs(ds)))
 			{
 				c = ck;
 				beta = 0;
