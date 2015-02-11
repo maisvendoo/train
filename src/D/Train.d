@@ -496,6 +496,9 @@ class	CTrainModel: CModel
 		
 			if (method == "euler")
 				set_integration_method(&euler_solver_step);
+
+			if (method == "adams")
+				set_integration_method(&adams_solver_step);
 		
 			set_init_time(init_time);
 			set_stop_time(stop_time);
