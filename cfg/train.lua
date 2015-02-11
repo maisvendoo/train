@@ -12,10 +12,10 @@ local	km		= 1000.0
 ---------------------------------------------------------------------
 solver_params = 
 {
-	method		= "rkf5",	-- integration method
+	method		= "adams",	-- integration method
 	init_time	= 0,		-- initial time
 	stop_time	= 1000.0,	-- stop simulation time
-	step		= 1e-4,		-- time step
+	step		= 1e-5,		-- time step
 	max_step	= 1e-4,		-- maximal time step
 	local_err	= 1e-10		-- local solver error
 }
