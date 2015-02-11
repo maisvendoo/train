@@ -12,7 +12,13 @@ import	std.c.stdlib;
 
 private
 {
-	enum	int		MAX_ITER	= 10;
+	enum			int		MAX_ITER	= 10;
+
+	// For Adams method
+	int						rk4_count	= 0;
+	enum			int		ORDER		= 4;
+	double[][]				f;
+	bool					init		= true;
 }
 
 //-------------------------------------------------------------------
@@ -20,7 +26,7 @@ private
 //-------------------------------------------------------------------
 alias	ode_system_t = void delegate(double[], ref double[], double);
 
-alias	ode_solver_t = void function(ref double[], 
+alias	ode_solver_t = double[] function(ref double[], 
 									 ref double[], 
 									 double, 
 									 ref double,
@@ -32,7 +38,7 @@ alias	ode_solver_t = void function(ref double[],
 //-------------------------------------------------------------------
 //		Euler method (1'st order) step
 //-------------------------------------------------------------------
-void euler_solver_step(ref double[] Y, 
+double[] euler_solver_step(ref double[] Y, 
 					   ref double[] dYdt, 
 					   double t, 
 					   ref double dt,
@@ -46,12 +52,14 @@ void euler_solver_step(ref double[] Y,
 	// New value of the state vector
 	for (int i = 0; i < Y.length; i++)
 		Y[i] += dYdt[i]*dt;
+
+	return dYdt;
 }
 
 //-------------------------------------------------------------------
 //		Runge-Kutta method (4'th order) step
 //-------------------------------------------------------------------
-void rk4_solver_step(ref double[] Y,
+double[] rk4_solver_step(ref double[] Y,
 					 ref double[] dYdt,
 					 double	t,
 					 ref double dt,
@@ -98,12 +106,14 @@ void rk4_solver_step(ref double[] Y,
 		k4[i] = dYdt[i];
 		Y[i] = Y[i] + dt*(k1[i] + 2*k2[i] + 2*k3[i] + k4[i])/6;
 	}
+
+	return k1;
 }
 
 //-------------------------------------------------------------------
 //
 //-------------------------------------------------------------------
-void rkf5_solver_step(ref double[] Y,
+double[] rkf5_solver_step(ref double[] Y,
 					  ref double[] dYdt,
 					  double t,
 					  ref double dt,
@@ -157,6 +167,7 @@ void rkf5_solver_step(ref double[] Y,
 	double	delta = 0;
 
 	double[]	Y1 = new double[n];
+	double[]	dY1dt = new double[n];
 	double[]	eps_y = new double[n];
 
 	do
@@ -168,6 +179,7 @@ void rkf5_solver_step(ref double[] Y,
 
 		for (int i = 0; i < n; i++)
 		{
+			dY1dt = dYdt;
 			k1[i] = dt*dYdt[i];
 			Y1[i] = Y[i] + b21*k1[i];
 		}
@@ -254,4 +266,54 @@ void rkf5_solver_step(ref double[] Y,
 		writeln("FAIL: Iterations limit");
 		exit(0);
 	}
+
+	return dY1dt;
+}
+
+//-------------------------------------------------------------------
+//
+//-------------------------------------------------------------------
+//-------------------------------------------------------------------
+//		Runge-Kutta method (4'th order) step
+//-------------------------------------------------------------------
+double[] adams_solver_step(ref double[] Y,
+					   ref double[] dYdt,
+					   double	t,
+					   ref double dt,
+					   double dt_max,
+					   double eps,
+					   ode_system_t ode_sys)
+{
+	int n = cast(int) Y.length;
+
+	if (init)
+	{
+		f = new double[][](ORDER, Y.length);
+		init = false;
+	}
+
+	if (rk4_count < ORDER)
+	{
+		f[rk4_count] = rk4_solver_step(Y, dYdt, t, dt, dt_max, eps, ode_sys);
+
+		rk4_count++;
+	}
+	else
+	{
+		ode_sys(Y, dYdt, t);
+		//f[rk4_count] = dYdt;
+
+		for (int i = 0; i < n; i++)
+		{
+			Y[i] = Y[i] + (-9*f[rk4_count-3][i] + 55*dYdt[i] + 
+				           37*f[rk4_count-2][i] - 59*f[rk4_count-1][i])*dt/24;
+
+			f[ORDER-1] = dYdt;
+		}
+
+		for (int i = 0; i < ORDER - 1; i++)
+			f[i] = f[i+1];
+	}
+
+	return null;
 }
