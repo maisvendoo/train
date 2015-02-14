@@ -274,7 +274,7 @@ double[] rkf5_solver_step(ref double[] Y,
 //
 //-------------------------------------------------------------------
 //-------------------------------------------------------------------
-//		Runge-Kutta method (4'th order) step
+//		Adams method (4'th order) step
 //-------------------------------------------------------------------
 double[] adams_solver_step(ref double[] Y,
 					   ref double[] dYdt,

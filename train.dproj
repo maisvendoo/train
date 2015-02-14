@@ -70,6 +70,7 @@
     <Compile Include="src\D\lua_d_api\lua.d" />
     <Compile Include="src\D\lua_d_api\luaconf.d" />
     <Compile Include="src\D\lua_d_api\lualib.d" />
+    <Compile Include="src\D\Vector.d" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
