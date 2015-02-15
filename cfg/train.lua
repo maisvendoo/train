@@ -12,11 +12,11 @@ local	km		= 1000.0
 ---------------------------------------------------------------------
 solver_params = 
 {
-	method		= "adams",	-- integration method
+	method		= "adams-multhon5",	-- integration method
 	init_time	= 0,		-- initial time
 	stop_time	= 1000.0,	-- stop simulation time
 	step		= 1e-5,		-- time step
-	max_step	= 1e-4,		-- maximal time step
+	max_step	= 1e-5,		-- maximal time step
 	local_err	= 1e-10		-- local solver error
 }
 
@@ -34,7 +34,7 @@ train_model =
 	empty_mass	= 25e3,
 	payload_coeff	= 0.0,
 	loco_section_mass	= 96e3,
-	loco_sections_num	= 2,
+	loco_sections_num	= 3,
 	delta_eps	= -1.0
 }
 
@@ -89,16 +89,8 @@ for i = 1, train_model.vehicles_num - 1 do
 
 end]]--
 
----------------------------------------------------------------------
---		Brakes program
----------------------------------------------------------------------
-valve_pos = function(t, v)
-
-	v_pos = 3
-
-	return v_pos
-
-end
+trac = true
+brake = false
 
 ---------------------------------------------------------------------
 --    Traction program
@@ -109,7 +101,8 @@ traction = function(t, v)
   dFdt = 1e4
   Fmax = 300e3
   
-  --[[if (math.abs(v) < 78) then
+  if ( (math.abs(v) <= 78) and (trac) ) then
+    
     force = dFdt*t
     
     if (force > Fmax) then
@@ -119,12 +112,28 @@ traction = function(t, v)
   else
     
     force = 0
+    trac = false
+    brake = true
     
-  end ]]--
-  
+  end  
   
   return force
   
+end
+
+---------------------------------------------------------------------
+--		Brakes program
+---------------------------------------------------------------------
+valve_pos = function(t, v)
+
+	if (brake) then
+		v_pos = 3
+    else
+    	v_pos = 1
+    end
+
+	return v_pos
+
 end
 
 res_file = "v_90_kmh.txt"

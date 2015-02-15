@@ -242,7 +242,7 @@ class	CTrainModel: CModel
 	//------------------------------------------------------------------
 	private void term_out(File term)
 	{
-		term.writef("Time: %10.4f s | Progress: %6.2f %c\r", t, 100 - y[nb+1]*100/v0, '%');  
+		term.writef("Time: %10.4f s | V : %6.2f kmh\r", t, y[1+nb]*kmh);  
 	}
 
 	private void file_out(File file)
@@ -499,6 +499,15 @@ class	CTrainModel: CModel
 
 			if (method == "adams")
 				set_integration_method(&adams_solver_step);
+
+			if (method == "impeuler")
+				set_integration_method(&impeuler_solver_step);
+
+			if (method == "adams-multhon")
+				set_integration_method(&AM_solver_step);
+
+			if (method == "adams-multhon5")
+				set_integration_method(&am5_solver_step);
 		
 			set_init_time(init_time);
 			set_stop_time(stop_time);
@@ -711,14 +720,14 @@ class	CTrainModel: CModel
 		// Other active forces calculation
 		F[idx] = 0;
 
-		double Ft = lua_cfg.call_func("traction", [t, y[1+nb]], err);
+		double Ft = lua_cfg.call_func("traction", [t, y[1+nb]*kmh], err);
 
 		for (int i = 0; i < train_params.train.loco_sections_num; i++)
 		{
 			F[i] = Ft;
 		}
 
-		int valve_pos = cast(int) lua_cfg.call_func("valve_pos", [t, y[1+nb]], err);
+		int valve_pos = cast(int) lua_cfg.call_func("valve_pos", [t, y[1+nb]*kmh], err);
 
 		brakes.set_valve_pos(valve_pos);
 
