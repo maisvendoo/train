@@ -49,6 +49,13 @@ enum	int		SHOES				= 2;
 enum	double	TONN_2_FORCE		= 9810.0;
 //enum	double	kmh					= 3.6;
 
+enum	double	pM_max				= 5.5e5;
+enum	double	pM_min				= 0.0;
+
+enum	double	dpMdt_BRAKE			= 0.05e5;
+enum	double	dpMdt_RELEASE		= 0.05e5;
+enum	double	dpMdt_HOLD			= 0.0;
+
 //-------------------------------------------------------------------
 //
 //-------------------------------------------------------------------
@@ -65,6 +72,9 @@ class	CBrakes
 		int[]		vehicle_brake_mode;
 		double[]	brake_force;
 		double[]	vehicle_coord;
+
+		double		pM;
+		double		dpMdt;
 
 		double		mode_time;
 		double		wave_speed;
@@ -93,6 +103,9 @@ class	CBrakes
 		this.max_cyl_press = MAX_CYL_PRESS;
 		this.min_cyl_press = MIN_CYL_PRESS;
 		this.press_step = LADEN_PRESS_STEP;
+
+		this.pM = pM_max;
+		this.dpMdt = dpMdt_HOLD;
 	}
 
 	protected

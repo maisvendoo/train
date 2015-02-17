@@ -12,12 +12,12 @@ local	km		= 1000.0
 ---------------------------------------------------------------------
 solver_params = 
 {
-	method		= "adams-multhon5",	-- integration method
+	method		= "rkf5",	-- integration method
 	init_time	= 0,		-- initial time
 	stop_time	= 1000.0,	-- stop simulation time
-	step		= 1e-5,		-- time step
-	max_step	= 1e-5,		-- maximal time step
-	local_err	= 1e-10		-- local solver error
+	step		= 1e-4,		-- time step
+	max_step	= 1e-3,		-- maximal time step
+	local_err	= 1e-9		-- local solver error
 }
 
 ---------------------------------------------------------------------
@@ -91,6 +91,11 @@ end]]--
 
 trac = true
 brake = false
+t_b = 0
+step = 1
+
+dt_s1 = 0.5
+dt_p1 = 15
 
 ---------------------------------------------------------------------
 --    Traction program
@@ -114,6 +119,7 @@ traction = function(t, v)
     force = 0
     trac = false
     brake = true
+	t_b = t
     
   end  
   
@@ -121,13 +127,27 @@ traction = function(t, v)
   
 end
 
+
+
 ---------------------------------------------------------------------
 --		Brakes program
 ---------------------------------------------------------------------
 valve_pos = function(t, v)
 
 	if (brake) then
-		v_pos = 3
+		
+		if (t - t_b <= dt_s1) then 
+			v_pos = 3
+		end
+
+		if (t - t_b > dt_s1) and (t - t_b <= dt_s1 + dt_p1) then
+			v_pos = 4
+		end
+
+		if (t - t_b > dt_s1 + dt_p1) then
+			v_pos = 3
+		end 
+		
     else
     	v_pos = 1
     end
