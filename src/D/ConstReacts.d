@@ -8,8 +8,8 @@ module	ConstReacts;
 
 import	std.math;
 
-enum	double	STIFF		= 1e9;
-enum	double	DAMP_COEFF	= 1e6;
+enum	double	STIFF		= 1e8;
+enum	double	DAMP_COEFF	= 1e5;
 
 //-------------------------------------------------------------------
 //		Kelvin-Focht force

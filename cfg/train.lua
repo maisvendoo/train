@@ -12,7 +12,7 @@ local	km		= 1000.0
 ---------------------------------------------------------------------
 solver_params = 
 {
-	method		= "rkf5",	-- integration method
+	method		= "adams-multhon5",	-- integration method
 	init_time	= 0,		-- initial time
 	stop_time	= 100.0,	-- stop simulation time
 	step		= 1e-4,		-- time step
@@ -106,7 +106,7 @@ traction = function(t, v)
   dFdt = 1e4
   Fmax = 100e3
   
-  if ( (math.abs(v) <= 64) and (trac) ) then
+  if ( (math.abs(v) <= 59) and (trac) ) then
     
     force = dFdt*t
     

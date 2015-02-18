@@ -24,6 +24,10 @@ class	CEFCoupling: CCoupling
 		double	c2;
 		double	ck;
 		double	t0;
+
+		double	dT;
+		double	ds_f;
+		double	cm;
 	}
 
 	this()
@@ -37,7 +41,11 @@ class	CEFCoupling: CCoupling
 		this.T_prev = this.T0;
 
 		this.c = this.ck;
-		this.beta = 100;
+		this.beta = 0;
+
+		this.dT = 0;
+		this.ds_f = 0;
+		this.cm = 0;
 	}
 
 
@@ -50,31 +58,24 @@ class	CEFCoupling: CCoupling
 		double beta = 0;
 		double eps_ds = 1e-4;
 
-		/*if (abs(ds) < eps_ds)
-		{
-			//T_prev = T0;
-			ds_prev = ds;
-			return T0*sign(ds);
-		}*/
-
-		T_cur = abs(T_prev) + c*(abs(ds) - abs(ds_prev)) + beta*dv;
+		T_cur = T_prev + c*(abs(ds) - abs(ds_prev))*sign(ds) + beta*dv;
 
 		if (ds*dv >= 0)
 		{
-			if (abs(T_cur) >= T0)
-			{
-				c = c1;
-				beta = 0;
-			}
-			else
+			if (abs(T_cur) < T0)
 			{
 				c = ck;
 				beta = this.beta;
 			}
+			else
+			{
+				c = c1;
+				beta = 0;
+			}
 		}
 		else
 		{
-			if (abs(T_cur) >= F2(abs(ds)))
+			if (abs(T_cur) > T0)
 			{
 				c = ck;
 				beta = this.beta;
@@ -99,12 +100,7 @@ class	CEFCoupling: CCoupling
 			}
 			else
 			{
-				/*if (ds*ds_prev < 0)
-				{
-					T_prev = T0;
-				}
-				else*/
-					T_prev = T_cur;
+				T_prev = T_cur;
 			}
 
 			ds_prev = ds;

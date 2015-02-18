@@ -102,7 +102,7 @@ class	CBrakes
 
 		this.max_cyl_press = MAX_CYL_PRESS;
 		this.min_cyl_press = MIN_CYL_PRESS;
-		this.press_step = LADEN_PRESS_STEP;
+		this.press_step = EMPTY_PRESS_STEP;
 
 		this.pM = pM_max;
 		this.dpMdt = dpMdt_HOLD;
