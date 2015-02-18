@@ -85,6 +85,8 @@ class	CTrainModel: CModel
 		double[][]		FwdGap;		// Forward gap force
 		double[][]		BwdGap;		// Backward gap force
 		double[][]		Power;		// Power of the all forces
+		double[][]		pc;
+		double[]		pM;
 
 
 		// Data registator parameters
@@ -727,7 +729,9 @@ class	CTrainModel: CModel
 			F[i] = Ft;
 		}
 
-		int valve_pos = cast(int) lua_cfg.call_func("valve_pos", [t, y[1+nb]*kmh], err);
+		double dpM = brakes.get_dpM();
+
+		int valve_pos = cast(int) lua_cfg.call_func("valve_pos", [t, y[1+nb]*kmh, dpM], err);
 
 		brakes.set_valve_pos(valve_pos);
 
@@ -842,6 +846,7 @@ class	CTrainModel: CModel
 		FwdGap	= new double[][nv];
 		BwdGap	= new double[][nv];
 		Power	= new double[][nv];
+		pc 		= new double[][nv];
 
 		return 0;
 	}
@@ -859,6 +864,7 @@ class	CTrainModel: CModel
 			reg_time = 0;
 
 			Time ~= t;
+			pM ~= brakes.get_pipe_pressure();
 
 			for (int i = 0; i < nv; i++)
 			{
@@ -882,6 +888,8 @@ class	CTrainModel: CModel
 
 				Power[i]	~= F[i]*y[k+1+nb] - B[i]*y[k+1+nb] - P1[i]*y[k+nb] - P2[i]*y[k+2+nb] +
 					           R1[i]*y[k+nb] + R2[i]*y[k+2+nb];
+
+				pc[i]		~= brakes.get_cylinder_pressure(i);
 			}
 		}
 
@@ -992,13 +1000,43 @@ class	CTrainModel: CModel
 
 			for (int j = 0; j < nv-1; j++)
 			{
-				log.writef("%f ", BwdGap[j][i]/kN);
+				log.writef("%f ", BwdGap[j][i]/kN/g);
 			}
 
 			for (int j = 0; j < nv-1; j++)
 			{
 				//log.writef("%f ", (x[j][i] - x[j+1][i] + s1[j+1][i] + s2[j][i])*1000.0);
 				log.writef("%f ", s2[j][i]*1000.0);
+			}
+
+			log.writeln();
+		}
+
+		log.writeln();
+		log.writeln();
+
+		for (int i = 0; i < N; i++)
+		{
+			log.writef("%f ", Time[i]);
+
+			for (int j = 0; j < nv; j++)
+			{
+				log.writef("%f ", W[j][i]/kN);
+			}
+
+			log.writeln();
+		}
+
+		log.writeln();
+		log.writeln();
+
+		for (int i = 0; i < N; i++)
+		{
+			log.writef("%f %f ", Time[i], pM[i]/1e5);
+
+			for (int j = 0; j < nv; j++)
+			{
+				log.writef("%f ", pc[j][i]/1e5);
 			}
 
 			log.writeln();

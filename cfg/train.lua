@@ -14,9 +14,9 @@ solver_params =
 {
 	method		= "rkf5",	-- integration method
 	init_time	= 0,		-- initial time
-	stop_time	= 1000.0,	-- stop simulation time
+	stop_time	= 100.0,	-- stop simulation time
 	step		= 1e-4,		-- time step
-	max_step	= 1e-3,		-- maximal time step
+	max_step	= 1e-4,		-- maximal time step
 	local_err	= 1e-9		-- local solver error
 }
 
@@ -43,7 +43,7 @@ train_model.init_velocity = train_model.init_velocity / kmh
 
 --[[vehicle_mass = {}
 
-mass_coeff = 0.02
+mass_coeff = 0.01
 
 payload_coeff = 0.0
 local payload_mass = 60e3
@@ -65,9 +65,9 @@ end]]--
 coupling_params = 
 {
 	c_1 = 2.57e7,
-	c_2 = 2.85e6,
-	c_k = 2.5e8,
-	beta = 100,
+	c_2 = 5.1e6,
+	c_k = 8.3e7,
+	beta = 0,
 	T0 = 240e3,
 	t0 = 50e3,
 	lambda = 0.09,
@@ -104,9 +104,9 @@ traction = function(t, v)
   
   force = 0
   dFdt = 1e4
-  Fmax = 300e3
+  Fmax = 100e3
   
-  if ( (math.abs(v) <= 78) and (trac) ) then
+  if ( (math.abs(v) <= 64) and (trac) ) then
     
     force = dFdt*t
     
@@ -132,21 +132,15 @@ end
 ---------------------------------------------------------------------
 --		Brakes program
 ---------------------------------------------------------------------
-valve_pos = function(t, v)
+valve_pos = function(t, v, dpM)
 
 	if (brake) then
-		
-		if (t - t_b <= dt_s1) then 
+
+		if (dpM <= 0.42e5) then
+			v_pos = 3
+		else
 			v_pos = 3
 		end
-
-		if (t - t_b > dt_s1) and (t - t_b <= dt_s1 + dt_p1) then
-			v_pos = 4
-		end
-
-		if (t - t_b > dt_s1 + dt_p1) then
-			v_pos = 3
-		end 
 		
     else
     	v_pos = 1

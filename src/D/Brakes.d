@@ -20,7 +20,7 @@ enum	int		SERVICE_BRAKE		= 3;
 enum	int		HOLD				= 4;
 enum	int		EMERGENCY_BRAKE		= 5;
 
-enum	double	VEHICLE_LENGTH		= 20.0;
+enum	double	VEHICLE_LENGTH		= 17.5;
 
 //-------------------------------------------------------------------
 //		Braking wave speed
@@ -29,7 +29,7 @@ enum	double	SERVICE_WAVE		= 280.0;
 enum	double	EMERGENCY_WAVE		= 300.0;
 enum	double	RELEASE_WAVE		= 280.0;
 
-enum	double	MAX_CYL_PRESS		= 4.0e5;
+enum	double	MAX_CYL_PRESS		= 1.5e5;
 enum	double	MIN_CYL_PRESS		= 0;
 enum	double	LADEN_PRESS_STEP	= 1.2e5;
 enum	double	MIDDLE_PRESS_STEP	= 0.8e5;
@@ -39,10 +39,10 @@ enum	int		LADEN_MODE			= 0;
 enum	int		MIDDLE_MODE			= 1;
 enum	int		EMPTY_MODE			= 2;
 
-enum	double	dpdt_BRAKE			= 0.3e5;
+enum	double	dpdt_BRAKE			= 0.13e5;
 enum	double	dpdt_RELEASE		= 0.05e5;
 
-enum	double	SHOE_FORCE			= 3.80;
+enum	double	SHOE_FORCE			= 3.8;
 enum	int		AXIS				= 4;
 enum	int		SHOES				= 2;
 
@@ -52,8 +52,8 @@ enum	double	TONN_2_FORCE		= 9810.0;
 enum	double	pM_max				= 5.5e5;
 enum	double	pM_min				= 0.0;
 
-enum	double	dpMdt_BRAKE			= 0.05e5;
-enum	double	dpMdt_RELEASE		= 0.05e5;
+enum	double	dpMdt_BRAKE			= 0.3e5;
+enum	double	dpMdt_RELEASE		= 0.2e5;
 enum	double	dpMdt_HOLD			= 0.0;
 
 //-------------------------------------------------------------------
@@ -138,16 +138,49 @@ class	CBrakes
 					break;
 				}
 			}
+
+			switch (brake_mode)
+			{
+				case RELEASE:
+				{
+					dpMdt = dpMdt_RELEASE;
+					break;
+				}
+					
+				case SERVICE_BRAKE:
+				{
+					dpMdt = -dpMdt_BRAKE;
+					break;
+				}
+					
+				case HOLD:
+				{
+					dpMdt = dpMdt_HOLD;
+					break;
+				}
+			}
 		}
 
 
 		void brake_pipe_process(double t, double dt)
 		{
+			// Train valve process
+
+			
+			pM += dpMdt*dt;
+			
+			if (pM > pM_max)
+				pM = pM_max;
+			
+			if (pM < pM_min)
+				pM = pM_min;
+
 			for (int i = 0; i < nv; i++)
 			{
 				if (mode_time >= vehicle_coord[i]/wave_speed)
 					vehicle_brake_mode[i] = brake_mode;
 
+				// Vehicles valves process
 				switch (vehicle_brake_mode[i])
 				{
 					case RELEASE:
@@ -278,5 +311,29 @@ class	CBrakes
 	void set_valve_pos(int train_valve_pos)
 	{
 		this.train_valve_pos = train_valve_pos;
+	}
+
+	//---------------------------------------------------------------
+	//
+	//---------------------------------------------------------------
+	double get_pipe_pressure()
+	{
+		return pM;
+	}
+
+	//---------------------------------------------------------------
+	//
+	//---------------------------------------------------------------
+	double get_dpM()
+	{
+		return pM_max - pM;
+	}
+
+	//---------------------------------------------------------------
+	//
+	//---------------------------------------------------------------
+	double get_cylinder_pressure(int idx)
+	{
+		return pc[idx];
 	}
 }
