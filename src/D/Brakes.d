@@ -9,6 +9,7 @@ module	Brakes;
 import	physics;
 import	MathFuncs;
 import	std.stdio;
+import	ODEqs;
 
 //-------------------------------------------------------------------
 //		Braking modes
@@ -29,7 +30,7 @@ enum	double	SERVICE_WAVE		= 280.0;
 enum	double	EMERGENCY_WAVE		= 300.0;
 enum	double	RELEASE_WAVE		= 280.0;
 
-enum	double	MAX_CYL_PRESS		= 1.5e5;
+enum	double	MAX_CYL_PRESS		= 4.5e5;
 enum	double	MIN_CYL_PRESS		= 0;
 enum	double	LADEN_PRESS_STEP	= 1.2e5;
 enum	double	MIDDLE_PRESS_STEP	= 0.8e5;
@@ -47,7 +48,6 @@ enum	int		AXIS				= 4;
 enum	int		SHOES				= 2;
 
 enum	double	TONN_2_FORCE		= 9810.0;
-//enum	double	kmh					= 3.6;
 
 enum	double	pM_max				= 5.5e5;
 enum	double	pM_min				= 0.0;
@@ -69,6 +69,7 @@ class	CBrakes
 		int			nv;
 
 		double[]	pc;
+		double[]	pc_ref;
 		int[]		vehicle_brake_mode;
 		double[]	brake_force;
 		double[]	vehicle_coord;
@@ -167,7 +168,6 @@ class	CBrakes
 		{
 			// Train valve process
 
-			
 			pM += dpMdt*dt;
 			
 			if (pM > pM_max)
@@ -188,28 +188,25 @@ class	CBrakes
 				{
 					case RELEASE:
 					{
-						dpdt[i] = -dpdt_RELEASE;
+						pc_ref[i] = 0.0;
 						gamma[i] = 0.0;
 						break;
 					}
 
 					case SERVICE_BRAKE:
 					{
-						double K = 0.0;
+						double k = 0.01;
 
-						dpdt[i] = dpdt_BRAKE*(1 + K*(cast(double) i));
-						gamma[i] = 0.06;
-
-						/*if (pc[i] < 0.95*press_step)
-							pc[i] = press_step;*/
+						pc_ref[i] = max_cyl_press;
+						gamma[i] = 0.04*(1 + k*(cast(double) i));
 
 						break;
 					}
 
 					case HOLD:
 					{
-						dpdt[i] = 0;
-						gamma[i] = 0;
+						pc_ref[i] = 0.0;
+						gamma[i] = 0.15;
 						break;
 					}
 				}
@@ -218,17 +215,23 @@ class	CBrakes
 
 		void brake_cylinder_process(double t, double dt)
 		{
+			rk4_solver_step(pc, dpdt, t, dt, 0.1, 1e-8, &this.brake_cyl_eqs);
+
+			/* DEBUG!!! */
+
+			double p_max = 1.5e5;
+
 			for (int i = 0; i < nv; i++)
 			{
-				//pc[i] += dpdt[i]*dt;
-				pc[i] = pc[i] + (4.0e5 - pc[i])*gamma[i]*dt;
-
-				if (pc[i] > max_cyl_press)
-					pc[i] = max_cyl_press;
-
-				if (pc[i] < min_cyl_press)
-					pc[i] = min_cyl_press;
+				if (pc[i] > p_max)
+					pc[i] = p_max;
 			}
+		}
+
+		void brake_cyl_eqs(double[] pc, ref double[] dpcdt, double t)
+		{
+			for (int i = 0; i < nv; i++)
+				dpcdt[i] = gamma[i]*(pc_ref[i] - pc[i]);
 		}
 	}
 
@@ -244,6 +247,7 @@ class	CBrakes
 		if (nv > 0)
 		{
 			pc 					= new double[nv];
+			pc_ref				= new double[nv];
 			brake_force			= new double[nv];
 			vehicle_coord		= new double[nv];
 			dpdt				= new double[nv];
@@ -255,8 +259,10 @@ class	CBrakes
 			for (int i = 0; i < nv; i++)
 			{
 				pc[i] = 0;
+				pc_ref[i] = 0;
 				brake_force[i] = 0;
 				dpdt[i] = 0;
+				gamma[i] = 0;
 
 				vehicle_coord[i] = VEHICLE_LENGTH*(cast(double) i + 0.5);
 				vehicle_brake_mode[i] = RELEASE;
@@ -291,8 +297,14 @@ class	CBrakes
 	//---------------------------------------------------------------
 	double get_brake_force(int idx, double v)
 	{
-		double	k1 = SHOE_FORCE / max_cyl_press;
-		double	K = k1*pc[idx];
+		double	p0 = 4e4;
+		double	k1 = SHOE_FORCE / (max_cyl_press - p0);
+		double	K = 0;
+
+		if (pc[idx] > p0)
+			K = k1*(pc[idx] - p0);
+		else
+			K = 0;
 
 		double	v_kmh = abs(v)*kmh;
 
