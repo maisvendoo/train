@@ -106,7 +106,7 @@ traction = function(t, v)
   dFdt = 1e4
   Fmax = 100e3
   
-  if ( (math.abs(v) <= 59) and (trac) ) then
+  if ( (math.abs(v) <= 64) and (trac) ) then
     
     force = dFdt*t
     

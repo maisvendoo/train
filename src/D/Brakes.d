@@ -80,6 +80,7 @@ class	CBrakes
 		double		wave_speed;
 
 		double[]	dpdt;
+		double[]	gamma;
 
 		double		max_cyl_press;
 		double		min_cyl_press;
@@ -177,7 +178,9 @@ class	CBrakes
 
 			for (int i = 0; i < nv; i++)
 			{
-				if (mode_time >= vehicle_coord[i]/wave_speed)
+				double tau = vehicle_coord[i]/wave_speed;
+
+				if (mode_time >= tau)
 					vehicle_brake_mode[i] = brake_mode;
 
 				// Vehicles valves process
@@ -186,15 +189,19 @@ class	CBrakes
 					case RELEASE:
 					{
 						dpdt[i] = -dpdt_RELEASE;
+						gamma[i] = 0.0;
 						break;
 					}
 
 					case SERVICE_BRAKE:
 					{
-						dpdt[i] = dpdt_BRAKE;
+						double K = 0.0;
 
-						if (pc[i] < 0.95*press_step)
-							pc[i] = press_step;
+						dpdt[i] = dpdt_BRAKE*(1 + K*(cast(double) i));
+						gamma[i] = 0.06;
+
+						/*if (pc[i] < 0.95*press_step)
+							pc[i] = press_step;*/
 
 						break;
 					}
@@ -202,6 +209,7 @@ class	CBrakes
 					case HOLD:
 					{
 						dpdt[i] = 0;
+						gamma[i] = 0;
 						break;
 					}
 				}
@@ -212,7 +220,8 @@ class	CBrakes
 		{
 			for (int i = 0; i < nv; i++)
 			{
-				pc[i] += dpdt[i]*dt;
+				//pc[i] += dpdt[i]*dt;
+				pc[i] = pc[i] + (4.0e5 - pc[i])*gamma[i]*dt;
 
 				if (pc[i] > max_cyl_press)
 					pc[i] = max_cyl_press;
@@ -239,6 +248,7 @@ class	CBrakes
 			vehicle_coord		= new double[nv];
 			dpdt				= new double[nv];
 			vehicle_brake_mode	= new int[nv];
+			gamma				= new double[nv];
 
 			err = 0;
 
