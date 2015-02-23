@@ -244,7 +244,7 @@ class	CTrainModel: CModel
 	//------------------------------------------------------------------
 	private void term_out(File term)
 	{
-		term.writef("Time: %10.4f s | V : %6.2f kmh\r", t, y[1+nb]*kmh);  
+		term.writef("Time: %10.4f s | V : %6.2f kmh | pM: %6.3f MPa\r", t, y[1+nb]*kmh, brakes.get_pipe_pressure(0)/1e6);  
 	}
 
 	private void file_out(File file)
@@ -729,7 +729,7 @@ class	CTrainModel: CModel
 			F[i] = Ft;
 		}
 
-		double dpM = brakes.get_dpM();
+		double dpM = brakes.get_dpM(0);
 
 		int valve_pos = cast(int) lua_cfg.call_func("valve_pos", [t, y[1+nb]*kmh, dpM], err);
 
@@ -864,7 +864,7 @@ class	CTrainModel: CModel
 			reg_time = 0;
 
 			Time ~= t;
-			pM ~= brakes.get_pipe_pressure();
+			pM ~= brakes.get_pipe_pressure(0);
 
 			for (int i = 0; i < nv; i++)
 			{

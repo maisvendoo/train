@@ -28,7 +28,7 @@ enum	double	VEHICLE_LENGTH		= 17.5;
 //-------------------------------------------------------------------
 enum	double	SERVICE_WAVE		= 280.0;
 enum	double	EMERGENCY_WAVE		= 300.0;
-enum	double	RELEASE_WAVE		= 280.0;
+enum	double	RELEASE_WAVE		= 70.0;
 
 enum	double	MAX_CYL_PRESS		= 4.5e5;
 enum	double	MIN_CYL_PRESS		= 0;
@@ -74,8 +74,10 @@ class	CBrakes
 		double[]	brake_force;
 		double[]	vehicle_coord;
 
-		double		pM;
-		double		dpMdt;
+		double[]	pM;
+		double[]	pM_ref;
+		double[]	dpMdt;
+		double[]	dpM;
 
 		double		mode_time;
 		double		wave_speed;
@@ -105,9 +107,6 @@ class	CBrakes
 		this.max_cyl_press = MAX_CYL_PRESS;
 		this.min_cyl_press = MIN_CYL_PRESS;
 		this.press_step = EMPTY_PRESS_STEP;
-
-		this.pM = pM_max;
-		this.dpMdt = dpMdt_HOLD;
 	}
 
 	protected
@@ -125,39 +124,24 @@ class	CBrakes
 				case RELEASE:
 				{
 					wave_speed = RELEASE_WAVE;
+					gamma[0] = 0.04;
+					pM_ref[0] = pM_max;
 					break;
 				}
 
 				case SERVICE_BRAKE:
 				{
 					wave_speed = SERVICE_WAVE;
+					gamma[0] = 0.02;
+					pM_ref[0] = 0;
 					break;
 				}
 
 				case HOLD:
 				{
 					wave_speed = SERVICE_WAVE;
-					break;
-				}
-			}
-
-			switch (brake_mode)
-			{
-				case RELEASE:
-				{
-					dpMdt = dpMdt_RELEASE;
-					break;
-				}
-					
-				case SERVICE_BRAKE:
-				{
-					dpMdt = -dpMdt_BRAKE;
-					break;
-				}
-					
-				case HOLD:
-				{
-					dpMdt = dpMdt_HOLD;
+					gamma[0] = 0;
+					pM_ref[0] = 0;
 					break;
 				}
 			}
@@ -166,72 +150,61 @@ class	CBrakes
 
 		void brake_pipe_process(double t, double dt)
 		{
-			// Train valve process
-
-			pM += dpMdt*dt;
-			
-			if (pM > pM_max)
-				pM = pM_max;
-			
-			if (pM < pM_min)
-				pM = pM_min;
-
-			for (int i = 0; i < nv; i++)
+			for (int i = 1; i < nv; i++)
 			{
 				double tau = vehicle_coord[i]/wave_speed;
 
 				if (mode_time >= tau)
-					vehicle_brake_mode[i] = brake_mode;
-
-				// Vehicles valves process
-				switch (vehicle_brake_mode[i])
 				{
-					case RELEASE:
-					{
-						pc_ref[i] = 0.0;
-						gamma[i] = 0.0;
-						break;
-					}
-
-					case SERVICE_BRAKE:
-					{
-						double k = 0.01;
-
-						pc_ref[i] = max_cyl_press;
-						gamma[i] = 0.04*(1 + k*(cast(double) i));
-
-						break;
-					}
-
-					case HOLD:
-					{
-						pc_ref[i] = 0.0;
-						gamma[i] = 0.15;
-						break;
-					}
+					vehicle_brake_mode[i] = brake_mode;
+					pM[i] = pM[0];
 				}
 			}
+
+			rk4_solver_step(pM, dpMdt, t, dt, 0.1, 1e-8, &this.pipe_eqs);
 		}
 
 		void brake_cylinder_process(double t, double dt)
 		{
 			rk4_solver_step(pc, dpdt, t, dt, 0.1, 1e-8, &this.brake_cyl_eqs);
-
-			/* DEBUG!!! */
-
-			double p_max = 1.5e5;
-
-			for (int i = 0; i < nv; i++)
-			{
-				if (pc[i] > p_max)
-					pc[i] = p_max;
-			}
 		}
 
 		void brake_cyl_eqs(double[] pc, ref double[] dpcdt, double t)
 		{
 			for (int i = 0; i < nv; i++)
-				dpcdt[i] = gamma[i]*(pc_ref[i] - pc[i]);
+			{
+				double	ref_p = get_ref_pressure(get_dpM(i));
+				double	k = 10e-6*(ref_p - pc[i]);
+				double	gamma_b = 0.08;
+				double	gamma_r = 0.15;
+
+				if (k >=0 )
+				{
+					pc_ref[i] = max_cyl_press;
+
+					if (k > gamma_b)
+						k = gamma_b;
+				}
+				else
+				{
+					pc_ref[i] = 0;
+
+					k = abs(k);
+
+					if (k > gamma_r)
+						k = gamma_r;
+				}		
+
+				dpcdt[i] = k*(pc_ref[i] - pc[i]);
+			}
+		}
+
+		void pipe_eqs(double[] pM, ref double[] dpMdt, double t)
+		{
+			//for (int i = 0; i < nv; i++)
+			//{
+				dpMdt[0] = gamma[0]*(pM_ref[0] - pM[0]);
+			//}
 		}
 	}
 
@@ -253,6 +226,11 @@ class	CBrakes
 			dpdt				= new double[nv];
 			vehicle_brake_mode	= new int[nv];
 			gamma				= new double[nv];
+			dpM					= new double[nv];
+
+			pM					= new double[nv];
+			pM_ref				= new double[nv];
+			dpMdt				= new double[nv];
 
 			err = 0;
 
@@ -262,6 +240,10 @@ class	CBrakes
 				pc_ref[i] = 0;
 				brake_force[i] = 0;
 				dpdt[i] = 0;
+				dpM[i] = 0;
+
+				pM[i] = pM_max;
+				dpMdt[i] = 0;
 				gamma[i] = 0;
 
 				vehicle_coord[i] = VEHICLE_LENGTH*(cast(double) i + 0.5);
@@ -338,17 +320,17 @@ class	CBrakes
 	//---------------------------------------------------------------
 	//
 	//---------------------------------------------------------------
-	double get_pipe_pressure()
+	double get_pipe_pressure(int idx)
 	{
-		return pM;
+		return pM[idx];
 	}
 
 	//---------------------------------------------------------------
 	//
 	//---------------------------------------------------------------
-	double get_dpM()
+	double get_dpM(int idx)
 	{
-		return pM_max - pM;
+		return pM_max - pM[idx];
 	}
 
 	//---------------------------------------------------------------
@@ -357,5 +339,29 @@ class	CBrakes
 	double get_cylinder_pressure(int idx)
 	{
 		return pc[idx];
+	}
+
+
+
+	//---------------------------------------------------------------
+	//
+	//---------------------------------------------------------------
+	double get_ref_pressure(double dp)
+	{
+		double ref_p = 0;
+
+		if (dp < 0.4e5)
+			ref_p = 0;
+
+		if ( (dp >= 0.4e5) && (dp < 0.5e5) )
+			ref_p = 1.25e5;
+
+		if ( (dp >= 0.5e5) && (dp < 1.2e5) )
+			ref_p = 1.25e5 + 4.21*(dp - 0.5e5);
+
+		if (dp > 1.2e5)
+			ref_p = 4.2e5;
+
+		return ref_p;
 	}
 }

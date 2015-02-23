@@ -6,10 +6,11 @@
 //-------------------------------------------------------------------
 module	ConstReacts;
 
-import	std.math;
+import	MathFuncs;
 
 enum	double	STIFF		= 1e8;
 enum	double	DAMP_COEFF	= 1e5;
+enum	double	FRIC_COEFF	= 1.0;
 
 //-------------------------------------------------------------------
 //		Kelvin-Focht force
@@ -39,6 +40,28 @@ double get_mg_force(double ds, double dv)
 	if (force < 0)
 		force = 0;
 
+	return force;
+}
+
+//-------------------------------------------------------------------
+//		Hant-Krosley contact-strike force
+//-------------------------------------------------------------------
+double get_hk_force(double ds, double dv)
+{
+	double	c = STIFF;
+	double	b = DAMP_COEFF;
+	double	force = 0;
+	double	d = 0.01;
+	
+	if (ds <= 0)
+		force = 0;
+	else
+		force = c*ds + b*dv;
+		//force = c*ds*(1 + d*sign(dv));
+	
+	if (force < 0)
+		force = 0;
+	
 	return force;
 }
 

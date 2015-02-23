@@ -20,7 +20,7 @@
     <DebugLevel>0</DebugLevel>
     <ExtraLinkerArguments>-llua</ExtraLinkerArguments>
     <ConsolePause>false</ConsolePause>
-    <Commandlineparameters>--vehicles=5</Commandlineparameters>
+    <Commandlineparameters>--vehicles=103 --init_velocity=60 --log_file=adams.log --payload_coeff=0.87 --delta_eps=1.0 --term_out=true --delta=0.0001</Commandlineparameters>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <OutputPath>bin\Release</OutputPath>
