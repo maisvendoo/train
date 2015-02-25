@@ -49,6 +49,7 @@ struct	TTrainModel
 	double		railway_coord;
 	double		init_velocity;
 	double		mass_coeff;
+	double		mass_coup;
 	double		payload_mass;
 	double		empty_mass;
 	double		payload_coeff;

@@ -423,6 +423,7 @@ class	CTrainModel: CModel
 				init_velocity = 0;
 
 			mass_coeff = lua_cfg.get_double_field("train_model", "mass_coeff", err);
+			mass_coup = lua_cfg.get_double_field("train_model", "mass_coup", err); 
 			payload_mass = lua_cfg.get_double_field("train_model", "payload_mass", err);
 			payload_coeff = lua_cfg.get_double_field("train_model", "payload_coeff", err);
 			empty_mass = lua_cfg.get_double_field("train_model", "empty_mass", err);
@@ -578,6 +579,7 @@ class	CTrainModel: CModel
 		int err = LUA_S_OK;
 
 		double mass_coeff = train_params.train.mass_coeff;
+		double mass_coup = train_params.train.mass_coup;
 
 		for (int i = 0; i < nv; i++)
 		{
@@ -602,10 +604,17 @@ class	CTrainModel: CModel
 			/*if (err == LUA_S_NOEXIST)
 				return -1;*/
 
-			m[k] = mass_coeff*mass;
-			m[k+2] = mass_coeff*mass;
+			//m[k] = mass_coeff*mass;
+			m[k] = mass_coup;
+			//m[k+2] = mass_coeff*mass;
+			m[k+2] = mass_coup;
 			m[k+1] = mass - m[k] - m[k+2];
 		}
+
+		// Debug
+		m[3*99+1] = 58e3 - m[3*99] - m[3*99+2];
+		m[3*100+1] = 58e3 - m[3*100] - m[3*100+2];
+		m[3*101+1] = 58e3 - m[3*101] - m[3*101+2];
 
 		return 0;
 	}

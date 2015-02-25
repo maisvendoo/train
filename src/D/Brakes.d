@@ -30,11 +30,11 @@ enum	double	SERVICE_WAVE		= 280.0;
 enum	double	EMERGENCY_WAVE		= 300.0;
 enum	double	RELEASE_WAVE		= 70.0;
 
-enum	double	MAX_CYL_PRESS		= 4.5e5;
+enum	double	MAX_CYL_PRESS		= 0.45*MPa;
 enum	double	MIN_CYL_PRESS		= 0;
-enum	double	LADEN_PRESS_STEP	= 1.2e5;
-enum	double	MIDDLE_PRESS_STEP	= 0.8e5;
-enum	double	EMPTY_PRESS_STEP	= 0.8e5;
+enum	double	LADEN_PRESS_STEP	= 0.12*MPa;
+enum	double	MIDDLE_PRESS_STEP	= 0.08*MPa;
+enum	double	EMPTY_PRESS_STEP	= 0.08*MPa;
 
 enum	int		LADEN_MODE			= 0;
 enum	int		MIDDLE_MODE			= 1;
@@ -78,6 +78,10 @@ class	CBrakes
 		double[]	pM_ref;
 		double[]	dpMdt;
 		double[]	dpM;
+
+		int[]	axis;
+		int[]	shoes;
+		double[]	shoe_force;
 
 		double		mode_time;
 		double		wave_speed;
@@ -164,17 +168,32 @@ class	CBrakes
 			rk4_solver_step(pM, dpMdt, t, dt, 0.1, 1e-8, &this.pipe_eqs);
 		}
 
+
+
+		//-----------------------------------------------------------
+		//		Brake cylinder pressure calculation
+		//-----------------------------------------------------------
 		void brake_cylinder_process(double t, double dt)
 		{
 			rk4_solver_step(pc, dpdt, t, dt, 0.1, 1e-8, &this.brake_cyl_eqs);
 		}
 
+
+
+		//-----------------------------------------------------------
+		//		Brake cylinders ODE system
+		//-----------------------------------------------------------
 		void brake_cyl_eqs(double[] pc, ref double[] dpcdt, double t)
 		{
 			for (int i = 0; i < nv; i++)
 			{
+				// Reference brake cylinder pressure
 				double	ref_p = get_ref_pressure(get_dpM(i));
-				double	k = 10e-6*(ref_p - pc[i]);
+
+				// Pressure control
+				double	K1 = 10e-6;
+				double	k = K1*(ref_p - pc[i]);
+
 				double	gamma_b = 0.08;
 				double	gamma_r = 0.15;
 
@@ -199,12 +218,15 @@ class	CBrakes
 			}
 		}
 
+
+
+
+		//-----------------------------------------------------------
+		//		Brake pipe ODEs
+		//-----------------------------------------------------------
 		void pipe_eqs(double[] pM, ref double[] dpMdt, double t)
 		{
-			//for (int i = 0; i < nv; i++)
-			//{
-				dpMdt[0] = gamma[0]*(pM_ref[0] - pM[0]);
-			//}
+			dpMdt[0] = gamma[0]*(pM_ref[0] - pM[0]);
 		}
 	}
 
@@ -232,6 +254,10 @@ class	CBrakes
 			pM_ref				= new double[nv];
 			dpMdt				= new double[nv];
 
+			axis				= new int[nv];
+			shoes				= new int[nv];
+			shoe_force			= new double[nv];
+
 			err = 0;
 
 			for (int i = 0; i < nv; i++)
@@ -248,7 +274,18 @@ class	CBrakes
 
 				vehicle_coord[i] = VEHICLE_LENGTH*(cast(double) i + 0.5);
 				vehicle_brake_mode[i] = RELEASE;
+
+				axis[i] = AXIS;
+				shoes[i] = SHOES;
+				shoe_force[i] = SHOE_FORCE;
 			}
+
+			shoes[99] = 4;
+			shoe_force[99] = 2.35;
+			shoes[100] = 4;
+			shoe_force[100] = 2.35;
+			shoes[101] = 4;
+			shoe_force[101] = 2.35;
 		}
 		else
 		{
@@ -279,8 +316,8 @@ class	CBrakes
 	//---------------------------------------------------------------
 	double get_brake_force(int idx, double v)
 	{
-		double	p0 = 4e4;
-		double	k1 = SHOE_FORCE / (max_cyl_press - p0);
+		double	p0 = 0.04*MPa;
+		double	k1 = shoe_force[idx] / (max_cyl_press - p0);
 		double	K = 0;
 
 		if (pc[idx] > p0)
@@ -294,7 +331,7 @@ class	CBrakes
 
 		double shoe_brake = K*phi*TONN_2_FORCE;
 
-		brake_force[idx] = shoe_brake*AXIS*SHOES;
+		brake_force[idx] = shoe_brake*axis[idx]*shoes[idx];
 
 		return brake_force[idx];
 	}
@@ -317,6 +354,8 @@ class	CBrakes
 		this.train_valve_pos = train_valve_pos;
 	}
 
+
+
 	//---------------------------------------------------------------
 	//
 	//---------------------------------------------------------------
@@ -325,6 +364,8 @@ class	CBrakes
 		return pM[idx];
 	}
 
+
+
 	//---------------------------------------------------------------
 	//
 	//---------------------------------------------------------------
@@ -332,6 +373,8 @@ class	CBrakes
 	{
 		return pM_max - pM[idx];
 	}
+
+
 
 	//---------------------------------------------------------------
 	//
@@ -350,17 +393,17 @@ class	CBrakes
 	{
 		double ref_p = 0;
 
-		if (dp < 0.4e5)
+		if (dp < 0.04*MPa)
 			ref_p = 0;
 
-		if ( (dp >= 0.4e5) && (dp < 0.5e5) )
-			ref_p = 1.25e5;
+		if ( (dp >= 0.04*MPa) && (dp < 0.05*MPa) )
+			ref_p = 0.125*MPa;
 
-		if ( (dp >= 0.5e5) && (dp < 1.2e5) )
-			ref_p = 1.25e5 + 4.21*(dp - 0.5e5);
+		if ( (dp >= 0.05*MPa) && (dp < 0.12*MPa) )
+			ref_p = 0.125*MPa + 4.21*(dp - 0.05*MPa);
 
-		if (dp > 1.2e5)
-			ref_p = 4.2e5;
+		if (dp > 0.12*MPa)
+			ref_p = 0.42*MPa;
 
 		return ref_p;
 	}

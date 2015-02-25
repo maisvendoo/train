@@ -30,6 +30,7 @@ train_model =
 	railway_coord	= 1500,			-- initial railway coordinate (km)
 	init_velocity	= 10,			-- initial velocity (km/h)
 	mass_coeff	= 0.001,
+  mass_coup = 200.0,
 	payload_mass	= 60e3,
 	empty_mass	= 25e3,
 	payload_coeff	= 0.0,
@@ -92,7 +93,7 @@ end]]--
 trac = true
 brake = false
 
-v0 = 51.0
+v0 = 64.0
 
 ---------------------------------------------------------------------
 --    Traction program
@@ -126,7 +127,7 @@ end
 
 
 steps = 2
-dp = {0.42e5, 0.42e5 + 0.54e5}
+dp = {0.42e5, 0.42e5 + 0.2e5}
 vh = 0
 step = 1
 
