@@ -92,6 +92,8 @@ end]]--
 trac = true
 brake = false
 
+v0 = 51.0
+
 ---------------------------------------------------------------------
 --    Traction program
 ---------------------------------------------------------------------
@@ -101,7 +103,7 @@ traction = function(t, v)
   dFdt = 1e4
   Fmax = 100e3
   
-  if ( (math.abs(v) <= 59) and (trac) ) then
+  if ( (math.abs(v) <= v0) and (trac) ) then
     
     force = dFdt*t
     
@@ -124,7 +126,7 @@ end
 
 
 steps = 2
-dp = {0.42e5, 0.42e5 + 0.96e5}
+dp = {0.42e5, 0.42e5 + 0.54e5}
 vh = 0
 step = 1
 
