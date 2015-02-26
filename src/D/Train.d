@@ -167,6 +167,8 @@ class	CTrainModel: CModel
 									   ref double[] dYdt, 
 									   double t) 
 	{
+		double[] a;
+
 		for (int i = 0; i < nv; i++)
 		{
 			int k = mass_n*i; 
@@ -175,7 +177,7 @@ class	CTrainModel: CModel
 			dYdt[k+1]	= Y[k+1+nb];
 			dYdt[k+2]	= Y[k+2+nb];
 
-			double[] a = get_accels(Y, t, i);
+			a = get_accels(Y, t, i);
 
 			dYdt[k+nb]		= a[0];
 			dYdt[k+1+nb]	= a[1];
@@ -706,10 +708,7 @@ class	CTrainModel: CModel
 	//---------------------------------------------------------------
 	double[] get_accels(double[] Y, double t, int idx)
 	{
-		double	eps_v	= 1e-3;
-		double	eps_s	= 1e-5;
 		int		err		= 0;
-
 		int k = mass_n*idx;
 
 		double[] a = new double[mass_n];
@@ -749,82 +748,22 @@ class	CTrainModel: CModel
 
 		Bmax[idx] = brakes.get_brake_force(idx, y[k+1+nb]) + get_main_res(y[k+1+nb], mv);
 
+		P1[idx] = fwd_coup[idx].get_force(y[k], y[k+nb]) + get_gap_force(y[k], y[k+nb], -lambda, lambda);
+		P2[idx] = bwd_coup[idx].get_force(y[k+2], y[k+2+nb]) + get_gap_force(y[k+2], y[k+2+nb], -lambda, lambda);
+
 		// Resistive force precheck
-		double Fa = F[idx] + R1[idx] - R2[idx];
-
-		if ( (abs(y[k+1+nb]) < eps_v) && (abs(Fa) <= Bmax[idx]) )
-		{
-			B[idx] = Fa;
-		}
-		else
-		{
-			B[idx] = Bmax[idx]*sign(y[k+1+nb]);
-		}
-
-		//  Vehicle body acceleration
-		a[1] = (F[idx] + R1[idx] - R2[idx] - B[idx])/(m[k] + m[k+1] + m[k+2]);
-
-		// Forward coupling force
-		if (abs(y[k]) < eps_s)
-		{
-			P1[idx] = R1[idx] - m[k]*a[1];
-		}
-		else
-		{
-			P1[idx] = fwd_coup[idx].get_force(y[k], y[k+nb]) + 
-				      get_gap_force(y[k], y[k+nb], -lambda, lambda);
-		}
-
-		// Backward coupling force
-		if (abs(y[k+2]) < eps_s)
-		{
-			P2[idx] = R2[idx] + m[k+2]*a[1];
-		}
-		else
-		{
-			P2[idx] = bwd_coup[idx].get_force(y[k+2], y[k+2+nb]) + 
-				      get_gap_force(y[k+2], y[k+2+nb], -lambda, lambda);
-		}
+		double Fa = F[idx] + P1[idx] - P2[idx];
 
 		// Brake force calculation
-		if (abs(y[k+1]) < eps_v)
+		if (abs(y[k+1]) < ZERO)
 		{
-			if (abs(B[idx]) > Bmax[idx])
-				B[idx] = Bmax[idx]*sign(B[idx]);
+			if (abs(Fa) >= Bmax[idx])
+				B[idx] = Bmax[idx]*sign(Fa);
+			else
+				B[idx] = Fa;
 		}
 		else
 			B[idx] = Bmax[idx]*sign(y[k+1+nb]);
-
-		// Coupling forces calculation
-		if (abs(y[k]) < eps_s)
-		{
-			double T0 = fwd_coup[idx].get_init_force();
-
-			if (abs(P1[idx]) > T0)
-				P1[idx] = T0;
-
-			fwd_coup[idx].set_prev_force();
-		}
-		else
-		{
-			P1[idx] = fwd_coup[idx].get_force(y[k], y[k+nb]) + 
-			          get_gap_force(y[k], y[k+nb], -lambda, lambda);
-		}
-
-		if (abs(y[k+2]) < eps_s)
-		{
-			double T0 = bwd_coup[idx].get_init_force();
-			
-			if (abs(P2[idx]) > T0)
-				P2[idx] = T0;
-
-			bwd_coup[idx].set_prev_force();
-		}
-		else
-		{
-			P2[idx] = bwd_coup[idx].get_force(y[k+2], y[k+2+nb]) + 
-					  get_gap_force(y[k+2], y[k+2+nb], -lambda, lambda);
-		}
 
 		// Final accelleraion calculation
 		a[1] = (F[idx] + P1[idx] - P2[idx] - B[idx])/m[k+1];
