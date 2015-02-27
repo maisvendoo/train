@@ -86,6 +86,7 @@ struct	TCoupling
 	double		t0;
 	double		lambda;
 	double		delta;
+	double		T_max;
 
 	this(this)
 	{
@@ -97,5 +98,6 @@ struct	TCoupling
 		this.t0		= 50e3;
 		this.lambda	= 0.09;
 		this.delta	= 0.05;
+		this.T_max	= 2.45e6;
 	}
 }

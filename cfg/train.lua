@@ -67,12 +67,13 @@ coupling_params =
 {
 	c_1 = 2.57e7,
 	c_2 = 5.1e6,
-	c_k = 13e9,
+	c_k = 1.5e8,
 	beta = 0,
-	T0 = 93e3,
-	t0 = 50e3,
-	lambda = 0.09,
-	delta = 0.05
+	T0 = 210e3,
+	t0 = 73.6e3,
+	lambda = 0.07,
+	delta = 0.05,
+  T_max = 2.5e6
 }
 
 ---------------------------------------------------------------------
@@ -126,8 +127,8 @@ traction = function(t, v)
 end
 
 
-steps = 2
-dp = {0.42e5, 0.42e5 + 0.2e5}
+steps = 1
+dp = {0.42e5, 0.2e5}
 vh = 0
 step = 1
 
@@ -147,7 +148,7 @@ valve_pos = function(t, v, dpM)
       if (dpM >= dp[step]) then
         v_pos = 4
         step = step + 1
-        vh = v
+        vh = v      
       end
       
     end

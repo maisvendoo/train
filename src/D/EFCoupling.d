@@ -25,9 +25,10 @@ class	CEFCoupling: CCoupling
 		double	ck;
 		double	t0;
 
-		double	dT;
-		double	ds_f;
-		double	cm;
+		double	s1;
+		double	s2;
+		double	s_max;
+		double	T_max;
 	}
 
 	this()
@@ -43,10 +44,6 @@ class	CEFCoupling: CCoupling
 
 		this.c = this.ck;
 		this.beta = 0;
-
-		this.dT = 0;
-		this.ds_f = 0;
-		this.cm = 0;
 	}
 
 
@@ -58,11 +55,15 @@ class	CEFCoupling: CCoupling
 	{
 		double beta = 0;
 
-		//T_cur = (abs(T_prev) + c*(abs(ds) - abs(ds_prev)))*sign(ds) + beta*dv;
+		c1 = (T_max - T0)/(s_max - T0/ck);
+		c2 = (T0 - t0)*ck/(ck*s_max + T0 - T_max - t0);
+
+		s1 = T0/ck;
+		s2 = t0/ck;
 
 		if (ds*dv >= 0)
 		{
-			if (abs(T_cur) < T0)
+			if (abs(T_prev) < T0)
 			{
 				c = ck;
 				beta = this.beta;
@@ -75,15 +76,23 @@ class	CEFCoupling: CCoupling
 		}
 		else
 		{
-			if (abs(T_cur) > T0)
+			if (abs(T_prev) > T0)
 			{
 				c = ck;
 				beta = this.beta;
 			}
 			else
 			{
-				c = c2;
-				beta = 0;
+				if (abs(T_prev) < ck*abs(ds))
+				{
+					c = c2;
+					beta = 0;
+				}
+				else
+				{
+					c = ck;
+					beta = this.beta;
+				}
 			}
 		}
 
@@ -134,7 +143,15 @@ class	CEFCoupling: CCoupling
 		this.beta = beta;
 	}
 
+	void set_s_max(double s_max)
+	{
+		this.s_max = s_max;
+	}
 
+	void set_T_max(double T_max)
+	{
+		this.T_max = T_max;
+	}
 
 	//---------------------------------------------------------------
 	//

@@ -279,13 +279,6 @@ class	CBrakes
 				shoes[i] = SHOES;
 				shoe_force[i] = SHOE_FORCE;
 			}
-
-			shoes[99] = 4;
-			shoe_force[99] = 2.35;
-			shoes[100] = 4;
-			shoe_force[100] = 2.35;
-			shoes[101] = 4;
-			shoe_force[101] = 2.35;
 		}
 		else
 		{

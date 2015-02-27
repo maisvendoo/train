@@ -476,6 +476,11 @@ class	CTrainModel: CModel
 			
 			if (err == LUA_S_NOEXIST)
 				delta = 0.01;
+
+			T_max = lua_cfg.get_double_field("coupling_params", "T_max", err);
+
+			if (err == LUA_S_NOEXIST)
+				T_max = 2.45e6;
 		}
 
 		return err;
@@ -613,11 +618,6 @@ class	CTrainModel: CModel
 			m[k+1] = mass - m[k] - m[k+2];
 		}
 
-		// Debug
-		m[3*99+1] = 58e3 - m[3*99] - m[3*99+2];
-		m[3*100+1] = 58e3 - m[3*100] - m[3*100+2];
-		m[3*101+1] = 58e3 - m[3*101] - m[3*101+2];
-
 		return 0;
 	}
 
@@ -645,11 +645,15 @@ class	CTrainModel: CModel
 				fwd_coup[i].set_damp_coeff(beta);
 				fwd_coup[i].set_init_force(T0);
 				fwd_coup[i].set_release_init_force(t0);
+				fwd_coup[i].set_s_max(lambda);
+				fwd_coup[i].set_T_max(T_max);
 
 				bwd_coup[i].set_stiffs(c_1, c_2, c_k);
 				bwd_coup[i].set_damp_coeff(beta);
 				bwd_coup[i].set_init_force(T0);
 				bwd_coup[i].set_release_init_force(t0);
+				bwd_coup[i].set_s_max(lambda);
+				bwd_coup[i].set_T_max(T_max);
 
 				fwd_coup[i].reset();
 				bwd_coup[i].reset();
