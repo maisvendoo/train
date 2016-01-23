@@ -1,0 +1,8 @@
+.sconsign.dblite
+train.userprefs
+bin/
+obj/
+lua/log.txt
+src/D/lua_d_api/
+*.o
+
