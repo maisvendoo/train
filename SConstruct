@@ -4,8 +4,8 @@
 source_dir = 'src/'
 d_include_path = 'src/D/:src/D/lua_d_api/'
 
-release_target_dir = 'bin/release/'
-debug_target_dir = 'bin/debug/'
+release_target_dir = 'bin/Release/'
+debug_target_dir = 'bin/Debug/'
 
 target_name = 'train'
 
