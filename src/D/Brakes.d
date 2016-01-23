@@ -137,6 +137,11 @@ class	CBrakes
 					wave_speed = SERVICE_WAVE;
 					break;
 				}
+
+				default:
+				{
+					break;
+				}
 			}
 		}
 
@@ -169,6 +174,11 @@ class	CBrakes
 					case HOLD:
 					{
 						dpdt[i] = 0;
+						break;
+					}
+
+					default:
+					{
 						break;
 					}
 				}
